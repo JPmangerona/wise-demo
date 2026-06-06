@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-on-surface-variant: #566166;
+  --color-on-secondary: #f8f8ff;
+  --color-secondary-container: #d5e3fc;
+  --color-on-background: #2a3439;
+  --color-on-error-container: #752121;
+  --color-secondary-fixed-dim: #c7d5ed;
+  --color-tertiary-fixed: #e3dbfd;
+  --color-secondary-dim: #465468;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container: #e8eff3;
+  --color-outline-variant: #a9b4b9;
+  --color-on-surface: #2a3439;
+  --color-error: #9f403d;
+  --color-primary-dim: #4a5268;
+  --color-surface-variant: #d9e4ea;
+  --color-surface-tint: #565e74;
+  --color-tertiary: #605c78;
+  --color-primary: #565e74;
+  --color-on-tertiary-fixed: #3e3a54;
+  --color-on-secondary-fixed: #324053;
+  --color-primary-container: #dae2fd;
+  --color-on-secondary-fixed-variant: #4e5c71;
+  --color-on-tertiary: #fcf7ff;
+  --color-tertiary-dim: #54506b;
+  --color-error-dim: #4e0309;
+  --color-inverse-surface: #0b0f10;
+  --color-on-tertiary-container: #514d68;
+  --color-secondary: #526074;
+  --color-tertiary-fixed-dim: #d4cdee;
+  --color-on-secondary-container: #455367;
+  --color-on-error: #fff7f6;
+  --color-primary-fixed-dim: #ccd4ee;
+  --color-secondary-fixed: #d5e3fc;
+  --color-on-tertiary-fixed-variant: #5b5672;
+  --color-surface-dim: #cfdce3;
+  --color-surface-bright: #f7f9fb;
+  --color-on-primary-fixed: #373f54;
+  --color-outline: #717c82;
+  --color-surface-container-high: #e1e9ee;
+  --color-inverse-on-surface: #9a9d9f;
+  --color-on-primary: #f7f7ff;
+  --color-surface-container-low: #f0f4f7;
+  --color-surface-container-highest: #d9e4ea;
+  --color-background: #f7f9fb;
+  --color-surface: #f7f9fb;
+  --color-tertiary-container: #e3dbfd;
+  --color-on-primary-fixed-variant: #535b71;
+  --color-inverse-primary: #dae2fd;
+  --color-error-container: #fe8983;
+  --color-primary-fixed: #dae2fd;
+  --color-on-primary-container: #4a5167;
+
+  --font-manrope: var(--font-manrope);
+  --font-inter: var(--font-inter);
+  
+  --font-headline: var(--font-manrope), sans-serif;
+  --font-body: var(--font-inter), sans-serif;
+  --font-label: var(--font-inter), sans-serif;
+
+  --radius: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+  --radius-full: 0.75rem;
+}
+
+:root {
+  --background: var(--color-surface);
+  --foreground: var(--color-on-surface);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-headline);
+}

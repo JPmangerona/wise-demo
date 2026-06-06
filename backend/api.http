@@ -1,0 +1,272 @@
+###############################################
+#           🔵 MÓDULO: USERS
+###############################################
+
+### 1. Cadastrar um novo usuário (campos mínimos)
+POST http://localhost:3002/api/v1/users
+Content-Type: application/json
+
+{
+  "name": "João Mangerona",
+  "email": "joao@example.com",
+  "password": "senhaSuperSegura123"
+}
+###
+
+### 2. Cadastrar usuário completo (com todos os campos)
+POST http://localhost:3002/api/v1/users
+Content-Type: application/json
+
+{
+  "name": "Maria Silva 3",
+  "email": "maria@example3.com",
+  "password": "senha123456",
+  "role": "ADMIN",
+  "phone": "(11) 99999-0000",
+  "cpf": "123.456.789-00",
+  "address": "Rua das Flores",
+  "addressNumber": "100",
+  "addressComplement": "Sala 3",
+  "neighborhood": "Centro",
+  "city": "São Paulo",
+  "state": "SP",
+  "zipCode": "01000-000",
+  "birthDate": "1990-05-15",
+  "commission": 10,
+  "pix": "maria@example.com",
+  "pixKeyType": "email"
+}
+
+###
+
+### 2.1 Cadastrar usuário completo (com todos os campos)
+POST http://localhost:3002/api/v1/users
+Content-Type: application/json
+
+{
+  "name": "Maria Silva 3",
+  "email": "maria@example3.com",
+  "password": "senha123456",
+  "role": "STAFF",
+  "phone": "(11) 99999-0000",
+  "cpf": "123.456.789-00",
+  "address": "Rua das Flores",
+  "addressNumber": "100",
+  "addressComplement": "Sala 3",
+  "neighborhood": "Centro",
+  "city": "São Paulo",
+  "state": "SP",
+  "zipCode": "01000-000",
+  "birthDate": "1990-05-15",
+  "commission": 10,
+  "pix": "maria@example.com",
+  "pixKeyType": "email",
+  "companyId": "30134d8a-3ab7-428c-b2a5-979ff8c2e317"
+}
+
+###
+
+### 3. Listar todos os usuários
+GET http://localhost:3002/api/v1/users
+
+###############################################
+#         🟢 MÓDULO: COMPANIES
+###############################################
+
+### 4. Cadastrar uma empresa (escritório de advocacia)
+POST http://localhost:3002/api/v1/companies
+Content-Type: application/json
+
+{
+  "name": "Escritório Silva & Advogados",
+  "email": "contato@silvaadvogados.com",
+  "cpfCnpj": "12.345.678/0001-90",
+  "phone": "(11) 3333-4444",
+  "address": "Av. Paulista",
+  "addressNumber": "1500",
+  "addressComplement": "14º andar",
+  "neighborhood": "Bela Vista",
+  "city": "São Paulo",
+  "state": "SP",
+  "zipCode": "01310-100",
+  "personType": "Jurídica",
+  "trialDays": 14,
+  "monthlyFee": 199.90,
+  "trialEndDate": "2026-06-01"
+}
+
+###
+
+### 5. Listar todas as empresas
+GET http://localhost:3002/api/v1/companies
+
+###############################################
+#         🟡 MÓDULO: CLIENTS
+###############################################
+
+### 6. Cadastrar um cliente (sem acesso ao sistema)
+POST http://localhost:3002/api/v1/clients
+Content-Type: application/json
+
+{
+  "name": "Carlos Oliveira",
+  "email": "carlos@gmail.com",
+  "cpfCnpj": "987.654.321-00",
+  "phone": "(21) 98888-7777",
+  "address": "Rua do Comércio",
+  "addressNumber": "50",
+  "neighborhood": "Copacabana",
+  "city": "Rio de Janeiro",
+  "state": "RJ",
+  "zipCode": "22000-000",
+  "personType": "Física",
+  "birthDate": "1985-03-20",
+  "canAccess": false
+}
+
+###
+
+### 7. Cadastrar um cliente (com acesso ao sistema)
+POST http://localhost:3002/api/v1/clients
+Content-Type: application/json
+
+{
+  "name": "Ana Souza",
+  "email": "ana@empresa.com",
+  "password": "senhaDoCliente123",
+  "phone": "(31) 97777-6666",
+  "personType": "Física",
+  "canAccess": true
+}
+
+###
+
+### 8. Listar todos os clientes
+GET http://localhost:3002/api/v1/clients
+
+###############################################
+#       🟣 MÓDULO: RESOURCES (Funcionalidades)
+###############################################
+
+### 9. Criar recurso: Processos
+POST http://localhost:3002/api/v1/resources
+Content-Type: application/json
+
+{
+  "name": "Processos",
+  "slug": "cases",
+  "description": "Módulo de gestão de processos jurídicos"
+}
+
+###
+
+### 10. Criar recurso: Financeiro
+POST http://localhost:3002/api/v1/resources
+Content-Type: application/json
+
+{
+  "name": "Financeiro",
+  "slug": "finance",
+  "description": "Módulo de controle financeiro"
+}
+
+###
+
+### 11. Criar recurso: Agenda
+POST http://localhost:3002/api/v1/resources
+Content-Type: application/json
+
+{
+  "name": "Agenda",
+  "slug": "calendar",
+  "description": "Módulo de agenda e compromissos"
+}
+
+###
+
+### 12. Listar todos os recursos
+GET http://localhost:3002/api/v1/resources
+
+###
+
+### 13. Atribuir recurso a uma empresa
+### ⚠️ Substitua {companyId} e {resourceId} pelos UUIDs reais retornados nos passos 4 e 9
+POST http://localhost:3002/api/v1/resources/company/{30134d8a-3ab7-428c-b2a5-979ff8c2e317}/assign/{aadd806b-6453-427f-ae57-6f1662390903}
+
+###
+
+### 14. Listar recursos de uma empresa
+### ⚠️ Substitua {companyId} pelo UUID real
+GET http://localhost:3002/api/v1/resources/company/{30134d8a-3ab7-428c-b2a5-979ff8c2e317}
+
+###
+
+### 15. Remover recurso de uma empresa
+### ⚠️ Substitua {companyId} e {resourceId} pelos UUIDs reais
+DELETE http://localhost:3002/api/v1/resources/company/{30134d8a-3ab7-428c-b2a5-979ff8c2e317}/remove/{aadd806b-6453-427f-ae57-6f1662390903}
+
+###############################################
+#       🔴 MÓDULO: PERMISSIONS (Permissões)
+###############################################
+
+### 16. Criar permissão: Visualizar Processos
+### ⚠️ Substitua {resourceId} pelo UUID do recurso "Processos" (passo 9)
+POST http://localhost:3002/api/v1/permissions
+Content-Type: application/json
+
+{
+  "name": "Visualizar Processos",
+  "slug": "cases.view",
+  "group": "Processos",
+  "description": "Permite visualizar todos os processos",
+  "resourceId": "{resourceId}"
+}
+
+###
+
+### 17. Criar permissão: Criar Processos
+POST http://localhost:3002/api/v1/permissions
+Content-Type: application/json
+
+{
+  "name": "Criar Processos",
+  "slug": "cases.create",
+  "group": "Processos",
+  "description": "Permite criar novos processos"
+}
+
+###
+
+### 18. Criar permissão: Visualizar Financeiro
+POST http://localhost:3002/api/v1/permissions
+Content-Type: application/json
+
+{
+  "name": "Visualizar Financeiro",
+  "slug": "finance.view",
+  "group": "Financeiro",
+  "description": "Permite visualizar o módulo financeiro"
+}
+
+###
+
+### 19. Listar todas as permissões
+GET http://localhost:3002/api/v1/permissions
+
+###
+
+### 20. Atribuir permissão a um usuário
+### ⚠️ Substitua {userId} e {permissionId} pelos UUIDs reais
+POST http://localhost:3002/api/v1/permissions/user/{userId}/assign/{permissionId}
+
+###
+
+### 21. Listar permissões de um usuário
+### ⚠️ Substitua {userId} pelo UUID real
+GET http://localhost:3002/api/v1/permissions/user/{userId}
+
+###
+
+### 22. Remover permissão de um usuário
+### ⚠️ Substitua {userId} e {permissionId} pelos UUIDs reais
+DELETE http://localhost:3002/api/v1/permissions/user/{userId}/remove/{permissionId}
