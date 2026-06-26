@@ -44,6 +44,8 @@ export default function ProcessosPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [formData, setFormData] = useState<ProcessForm>(emptyForm);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ cnj?: string; title?: string }>({});
 
   // ---- Fetch de dados ----
   const fetchData = async () => {
@@ -76,6 +78,8 @@ export default function ProcessosPage() {
     const handleOpenModal = () => {
       setEditingProcess(null);
       setFormData(emptyForm);
+      setErrorMsg(null);
+      setFieldErrors({});
       setIsModalOpen(true);
     };
 
@@ -109,13 +113,36 @@ export default function ProcessosPage() {
       clientId: process.clientId || '',
       userIds: process.processUsers?.map((pu) => pu.userId) || [],
     });
+    setErrorMsg(null);
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
   const handleSave = async () => {
     try {
+      setErrorMsg(null);
+      setFieldErrors({});
+
+      const errors: { cnj?: string; title?: string } = {};
+      if (!formData.cnj || !formData.cnj.trim()) {
+        errors.cnj = 'O número do processo (CNJ) é obrigatório.';
+      } else if (formData.cnj.length > 100) {
+        errors.cnj = 'O número do processo (CNJ) não pode ter mais de 100 caracteres.';
+      }
+
+      if (!formData.title || !formData.title.trim()) {
+        errors.title = 'O título / causa é obrigatório.';
+      } else if (formData.title.length > 100) {
+        errors.title = 'O título / causa não pode ter mais de 100 caracteres.';
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+
       if (!formData.status) {
-        alert('Por favor, selecione um status.');
+        setErrorMsg('Por favor, selecione um status.');
         return;
       }
 
@@ -138,8 +165,14 @@ export default function ProcessosPage() {
 
       setIsModalOpen(false);
       fetchData();
-    } catch (err) {
-      console.error('Erro ao salvar processo:', err);
+    } catch (err: any) {
+      console.warn('Erro ao salvar processo:', err.response?.data?.message || err.message);
+      const backendMsg = err.response?.data?.message;
+      if (Array.isArray(backendMsg)) {
+        setErrorMsg(backendMsg.join('. '));
+      } else {
+        setErrorMsg(backendMsg || 'Erro ao salvar processo.');
+      }
     }
   };
 
@@ -225,16 +258,16 @@ export default function ProcessosPage() {
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Número / Título</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Tribunal / Vara</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Cliente</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Responsáveis</th>
+                {/* <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Responsáveis</th> */}
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center">Status</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {loading ? (
-                <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-500">Carregando processos...</td></tr>
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">Carregando processos...</td></tr>
               ) : filteredProcesses.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-500">Nenhum processo encontrado.</td></tr>
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">Nenhum processo encontrado.</td></tr>
               ) : filteredProcesses.map((process) => (
                 <tr key={process.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
@@ -248,9 +281,9 @@ export default function ProcessosPage() {
                   <td className="px-6 py-4">
                     <span className="text-sm text-slate-700">{getClientName(process.clientId)}</span>
                   </td>
-                  <td className="px-6 py-4">
+                  {/* <td className="px-6 py-4">
                     <span className="text-sm text-slate-700">{getAssignedUserNames(process)}</span>
-                  </td>
+                  </td> */}
                   <td className="px-6 py-4 text-center">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-tight 
                       ${process.status === 'ATIVO' ? 'bg-blue-50 text-blue-700' : 
@@ -276,15 +309,22 @@ export default function ProcessosPage() {
       {/* ---- Modal Criar/Editar ---- */}
       <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setIsUserDropdownOpen(false); }} title={editingProcess ? 'Editar Processo' : 'Adicionar Novo Processo'}>
         <div className="space-y-4">
+          {errorMsg && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
+              {errorMsg}
+            </div>
+          )}
           {/* CNJ + Título */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Número Processo (CNJ)</label>
-              <input type="text" value={formData.cnj} onChange={(e) => setFormData({ ...formData, cnj: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+              <input type="text" maxLength={100} value={formData.cnj} onChange={(e) => setFormData({ ...formData, cnj: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+              {fieldErrors.cnj && <p className="text-xs text-red-600 font-medium mt-1">{fieldErrors.cnj}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Título / Causa</label>
-              <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+              <input type="text" maxLength={100} value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+              {fieldErrors.title && <p className="text-xs text-red-600 font-medium mt-1">{fieldErrors.title}</p>}
             </div>
           </div>
 
@@ -325,6 +365,7 @@ export default function ProcessosPage() {
           </div>
 
           {/* Responsáveis (Multi-select com checkboxes) */}
+          {/* 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Responsáveis pelo Processo</label>
             <div className="relative">
@@ -371,6 +412,7 @@ export default function ProcessosPage() {
               <p className="text-xs text-slate-500 mt-1">{formData.userIds.length} responsável(is) selecionado(s)</p>
             )}
           </div>
+          */}
 
           <Actions onCancel={() => { setIsModalOpen(false); setIsUserDropdownOpen(false); }} onConfirm={handleSave} label="Salvar Processo" />
         </div>

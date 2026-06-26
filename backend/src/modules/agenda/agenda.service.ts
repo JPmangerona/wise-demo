@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, ConflictException } from '@nestjs/common';
 import { AgendaRepository } from './agenda.repository';
 import { CreateAgendaDto } from './dto/create-agenda.dto';
 import { UpdateAgendaDto } from './dto/update-agenda.dto';
@@ -37,6 +37,26 @@ export class AgendaService {
   }
 
   async create(createAgendaDto: CreateAgendaDto, user: any) {
+    // Validação: não permitir duas tarefas na mesma data e horário
+    const existingTasks = await this.agendaRepository.findAll([
+      { 
+        companyId: user.companyId, 
+        createdById: user.id, 
+        date: createAgendaDto.date, 
+        startTime: createAgendaDto.startTime 
+      },
+      ...(createAgendaDto.assignedToId ? [{
+        companyId: user.companyId,
+        assignedToId: createAgendaDto.assignedToId,
+        date: createAgendaDto.date,
+        startTime: createAgendaDto.startTime
+      }] : [])
+    ]);
+
+    if (existingTasks.length > 0) {
+      throw new ConflictException('Já existe um compromisso agendado para esta mesma data e horário.');
+    }
+
     // O compromisso é criado pelo usuário logado
     return this.agendaRepository.create(createAgendaDto, user.companyId, user.id);
   }

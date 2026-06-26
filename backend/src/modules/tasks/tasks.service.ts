@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { TasksRepository } from './tasks.repository';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -46,7 +46,37 @@ export class TasksService {
 
   async update(id: string, updateTaskDto: UpdateTaskDto, user: any) {
     // Reutilizamos a lógica do findOne para garantir que ele tem permissão de ver/editar
-    await this.findOne(id, user);
+    const task = await this.findOne(id, user);
+
+    // Máquina de Estados (State Machine) para o status da Tarefa
+    if (updateTaskDto.status && updateTaskDto.status !== task.status) {
+      const { status: newStatus } = updateTaskDto;
+      const currentStatus = task.status;
+
+      let isValidTransition = false;
+
+      if (currentStatus === 'PENDING') {
+        isValidTransition = ['IN_PROGRESS', 'CANCELED'].includes(newStatus);
+      } else if (currentStatus === 'IN_PROGRESS') {
+        isValidTransition = ['PENDING', 'CANCELED', 'COMPLETED'].includes(newStatus);
+      } else if (currentStatus === 'COMPLETED' || currentStatus === 'CANCELED') {
+        // Estados finais não permitem transições
+        isValidTransition = false;
+      }
+
+      if (!isValidTransition) {
+        const statusLabels: Record<string, string> = {
+          PENDING: 'PENDENTE',
+          IN_PROGRESS: 'EM PROGRESSO',
+          COMPLETED: 'CONCLUÍDA',
+          CANCELED: 'CANCELADA',
+        };
+        const currentLabel = statusLabels[currentStatus] || currentStatus;
+        const newLabel = statusLabels[newStatus] || newStatus;
+        throw new BadRequestException(`Transição de estado inválida de ${currentLabel} para ${newLabel}.`);
+      }
+    }
+
     return this.tasksRepository.update(id, updateTaskDto);
   }
 

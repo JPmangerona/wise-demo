@@ -23,6 +23,19 @@ const emptyForm: TaskForm = {
   status: 'PENDING',
 };
 
+const statusColors: Record<string, string> = {
+  COMPLETED: 'text-green-700 bg-green-50 font-bold',
+  IN_PROGRESS: 'text-blue-700 bg-blue-50 font-bold',
+  CANCELED: 'text-red-700 bg-red-50 font-bold',
+  PENDING: 'text-amber-700 bg-amber-50 font-bold',
+};
+
+const priorityColors: Record<string, string> = {
+  HIGH: 'text-red-700 bg-red-50 font-bold',
+  MEDIUM: 'text-amber-700 bg-amber-50 font-bold',
+  LOW: 'text-slate-700 bg-slate-100 font-bold',
+};
+
 export default function Tarefas() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -35,6 +48,7 @@ export default function Tarefas() {
   const [filterPriority, setFilterPriority] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [formData, setFormData] = useState<TaskForm>(emptyForm);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -63,6 +77,7 @@ export default function Tarefas() {
     const handleOpenModal = () => {
       setEditingTask(null);
       setFormData(emptyForm);
+      setErrorMsg(null);
       setIsModalOpen(true);
     };
 
@@ -81,11 +96,18 @@ export default function Tarefas() {
       priority: task.priority,
       status: task.status,
     });
+    setErrorMsg(null);
     setIsModalOpen(true);
   };
 
   const handleSave = async () => {
     try {
+      setErrorMsg(null);
+      if (!formData.title || !formData.title.trim()) {
+        setErrorMsg('O título da tarefa é obrigatório.');
+        return;
+      }
+
       const payload = {
         ...formData,
         assignedToId: formData.assignedToId || undefined,
@@ -100,8 +122,9 @@ export default function Tarefas() {
 
       setIsModalOpen(false);
       fetchData();
-    } catch (err) {
-      console.error('Erro ao salvar tarefa:', err);
+    } catch (err: any) {
+      console.warn('Erro ao salvar tarefa:', err.response?.data?.message || err.message);
+      setErrorMsg(err.response?.data?.message || 'Erro ao salvar tarefa.');
     }
   };
 
@@ -162,7 +185,7 @@ export default function Tarefas() {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Tarefa</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Responsável</th>
+                {/* <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Responsável</th> */}
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Prioridade</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center">Status</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-right">Ações</th>
@@ -170,16 +193,16 @@ export default function Tarefas() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {loading ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">Carregando tarefas...</td></tr>
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-500">Carregando tarefas...</td></tr>
               ) : filteredTasks.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">Nenhuma tarefa encontrada.</td></tr>
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-500">Nenhuma tarefa encontrada.</td></tr>
               ) : filteredTasks.map((task) => (
                 <tr key={task.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <span className="text-sm font-bold text-slate-900 block">{task.title}</span>
                     <span className="text-xs text-slate-500">{task.description || task.id}</span>
                   </td>
-                  <td className="px-6 py-4"><span className="text-sm text-slate-700">{getUserName(task.assignedToId)}</span></td>
+                  {/* <td className="px-6 py-4"><span className="text-sm text-slate-700">{getUserName(task.assignedToId)}</span></td> */}
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${task.priority === 'HIGH' ? 'bg-red-50 text-red-700' : task.priority === 'MEDIUM' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
                       {TASK_PRIORITY_LABELS[task.priority]}
@@ -205,6 +228,11 @@ export default function Tarefas() {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}>
         <div className="space-y-4">
+          {errorMsg && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
+              {errorMsg}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Título da Tarefa</label>
             <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
@@ -214,25 +242,29 @@ export default function Tarefas() {
             <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none min-h-24" />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Responsável</label>
               <select value={formData.assignedToId} onChange={(e) => setFormData({ ...formData, assignedToId: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
                 <option value="">Sem responsável</option>
                 {users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
               </select>
-            </div>
+            </div> */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Prioridade</label>
-              <select value={formData.priority} onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
-                {Object.entries(TASK_PRIORITY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              <select value={formData.priority} onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })} className={`w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none ${priorityColors[formData.priority]}`}>
+                {Object.entries(TASK_PRIORITY_LABELS).map(([value, label]) => (
+                  <option key={value} value={value} className={priorityColors[value]}>{label}</option>
+                ))}
               </select>
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-            <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
-              {Object.entries(TASK_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })} className={`w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none ${statusColors[formData.status]}`}>
+                {Object.entries(TASK_STATUS_LABELS).map(([value, label]) => (
+                  <option key={value} value={value} className={statusColors[value]}>{label}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <Actions onCancel={() => setIsModalOpen(false)} onConfirm={handleSave} label="Salvar" />
         </div>

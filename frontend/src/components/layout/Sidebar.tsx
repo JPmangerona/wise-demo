@@ -32,9 +32,9 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     { href: '/agenda', label: 'Agenda', icon: Calendar, category: 'Operacional' },
     { href: '/tarefa', label: 'Tarefa', icon: CheckSquare, category: 'Operacional' },
     { href: '/processos', label: 'Processos', icon: Scale, category: 'Operacional' },
-    { href: '/usuarios', label: 'Usuários', icon: Contact, category: 'Contatos' },
+    // { href: '/usuarios', label: 'Usuários', icon: Contact, category: 'Contatos' },
     { href: '/clientes', label: 'Clientes', icon: Users, category: 'Contatos' },
-    { href: '/relatorios', label: 'Relatórios', icon: ChartNoAxesCombined, category: 'Financeiro' },
+    // { href: '/relatorios', label: 'Relatórios', icon: ChartNoAxesCombined, category: 'Financeiro' },
     { href: '/receita', label: 'Receita', icon: ArrowBigUpDash, category: 'Financeiro' },
     { href: '/despesa', label: 'Despesa', icon: ArrowBigDownDash, category: 'Financeiro' },
   ];

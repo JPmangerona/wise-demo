@@ -6,14 +6,13 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // CORS: Permite que o frontend (porta 3003) se comunique com o backend (porta 3002)
+
   app.enableCors({
-    origin: true, // Em desenvolvimento, permite qualquer origin (ex: localhost:3003 ou 192.168.0.x:3003)
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true,
   });
 
-  // Prefixo global: todas as rotas começam com /api/v1
   app.setGlobalPrefix('api/v1');
 
   // ValidationPipe global: valida automaticamente TODOS os DTOs em TODAS as rotas

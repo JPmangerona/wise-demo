@@ -1,16 +1,18 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsUUID, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional, IsUUID, IsArray, MaxLength } from 'class-validator';
 import { ProcessStatus } from '../entities/process.entity';
 
 export class CreateProcessDto {
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'O número do processo (CNJ) deve ser um texto' })
+  @IsNotEmpty({ message: 'O número do processo (CNJ) não pode ser vazio' })
+  @MaxLength(100, { message: 'O número do processo (CNJ) não pode ter mais de 100 caracteres' })
   cnj: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'O título / causa deve ser um texto' })
+  @IsNotEmpty({ message: 'O título / causa não pode ser vazio' })
+  @MaxLength(100, { message: 'O título / causa não pode ter mais de 100 caracteres' })
   title: string;
 
-  @IsEnum(ProcessStatus)
+  @IsEnum(ProcessStatus, { message: 'Status inválido' })
   @IsOptional()
   status?: ProcessStatus;
 

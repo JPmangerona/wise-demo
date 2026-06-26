@@ -31,7 +31,6 @@ const LABEL_TO_CATEGORY: Record<string, AgendaCategory> = {
   Prazo: 'DEADLINE',
   Tarefa: 'TASK',
   Outros: 'OTHER',
-  Geral: 'OTHER',
 };
 
 const categoryColors: Record<string, string> = {
@@ -40,7 +39,6 @@ const categoryColors: Record<string, string> = {
   'Prazo': 'bg-red-600',
   'Tarefa': 'bg-green-600',
   'Outros': 'bg-slate-400',
-  'Geral': 'bg-slate-400'
 };
 
 const timeOptions = Array.from({ length: 48 }, (_, i) => {
@@ -79,10 +77,15 @@ export default function Agenda() {
   const [viewMode, setViewMode] = useState<'Diária' | 'Semanal'>('Semanal');
   
   // States for Date
-  const [currentMonthDate, setCurrentMonthDate] = useState(new Date(2026, 4, 1)); // Starts in May 2026
-  const [selectedDateIso, setSelectedDateIso] = useState('2026-05-19'); // Default "today"
-  const [modalMonthDate, setModalMonthDate] = useState(new Date(2026, 4, 1)); // For the inline modal calendar
+  const today = new Date();
+  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const todayIso = today.toISOString().split('T')[0];
+
+  const [currentMonthDate, setCurrentMonthDate] = useState(currentMonthStart);
+  const [selectedDateIso, setSelectedDateIso] = useState(todayIso);
+  const [modalMonthDate, setModalMonthDate] = useState(currentMonthStart);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<Partial<Event>>({
     title: '', time: '10:00 - 11:00', isoDate: '', type: 'Online', location: '', participants: 1, category: 'Reunião'
@@ -112,6 +115,7 @@ export default function Agenda() {
       setEditingEvent(null);
       setFormData({ title: '', time: '10:00 - 11:00', isoDate: selectedDateIso, type: 'Online', location: '', participants: 1, category: 'Reunião' });
       setModalMonthDate(new Date(`${selectedDateIso}T12:00:00`));
+      setErrorMsg(null);
       setIsModalOpen(true);
     };
     window.addEventListener('open-new-modal', handleOpenModal);
@@ -122,6 +126,7 @@ export default function Agenda() {
     setEditingEvent(evt);
     setFormData(evt);
     setModalMonthDate(new Date(`${evt.isoDate}T12:00:00`));
+    setErrorMsg(null);
     setIsModalOpen(true);
   };
 
@@ -145,8 +150,9 @@ export default function Agenda() {
 
       setIsModalOpen(false);
       fetchEvents();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao salvar evento:', err);
+      setErrorMsg(err.response?.data?.message || 'Erro inesperado ao salvar o evento.');
     }
   };
 
@@ -417,6 +423,11 @@ export default function Agenda() {
       {/* Modals */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingEvent ? 'Editar Evento' : 'Novo Evento'}>
         <div className="space-y-4">
+          {errorMsg && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
+              {errorMsg}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Título</label>
             <input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full px-4 py-2 border rounded-lg outline-none" />
@@ -488,8 +499,8 @@ export default function Agenda() {
                   className="w-full px-4 py-2 border rounded-lg bg-white flex items-center justify-between text-slate-700"
                 >
                   <div className="flex items-center gap-2">
-                    <span className={`w-3 h-3 rounded-full ${categoryColors[formData.category || 'Geral']}`}></span>
-                    <span className="text-sm">{formData.category || 'Geral'}</span>
+                    <span className={`w-3 h-3 rounded-full ${categoryColors[formData.category || 'Outros']}`}></span>
+                    <span className="text-sm">{formData.category || 'Outros'}</span>
                   </div>
                   <ChevronDown className="w-4 h-4 text-slate-400" />
                 </button>

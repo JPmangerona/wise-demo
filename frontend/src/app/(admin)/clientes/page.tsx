@@ -51,6 +51,7 @@ export default function ClientesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTipo, setFilterTipo] = useState('');
   const [formData, setFormData] = useState<ClientForm>(emptyForm);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fetchClients = async () => {
     try {
@@ -75,6 +76,7 @@ export default function ClientesPage() {
     const handleOpenModal = () => {
       setEditingClient(null);
       setFormData(emptyForm);
+      setErrorMsg(null);
       setIsModalOpen(true);
     };
 
@@ -99,10 +101,16 @@ export default function ClientesPage() {
       state: client.state || '',
       zipCode: client.zipCode || '',
     });
+    setErrorMsg(null);
     setIsModalOpen(true);
   };
 
   const handleSave = async () => {
+    if (!formData.name.trim()) {
+      setErrorMsg('O campo Nome / Empresa é obrigatório.');
+      return;
+    }
+    
     try {
       const payload = {
         ...formData,
@@ -118,8 +126,9 @@ export default function ClientesPage() {
 
       setIsModalOpen(false);
       fetchClients();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao salvar cliente:', err);
+      setErrorMsg(err.response?.data?.message || 'Erro ao salvar cliente.');
     }
   };
 
@@ -211,7 +220,7 @@ export default function ClientesPage() {
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-800">{client.name}</p>
-                        <p className="text-xs text-slate-500">ID: {client.id}</p>
+                        {/* <p className="text-xs text-slate-500">ID: {client.id}</p> */}
                       </div>
                     </div>
                   </td>
@@ -242,6 +251,11 @@ export default function ClientesPage() {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingClient ? 'Editar Cliente' : 'Novo Cliente'}>
         <div className="space-y-4">
+          {errorMsg && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
+              {errorMsg}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Nome / Empresa</label>
             <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded-lg outline-none" />

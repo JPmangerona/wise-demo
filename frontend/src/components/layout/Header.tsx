@@ -38,7 +38,7 @@ export function Header() {
           cat: 'Financeiro',
           sub: 'Saídas',
           actionText: 'Lançar Despesa',
-          actionStyle: 'bg-gradient-to-r from-error to-error/80 text-white'
+          actionStyle: 'bg-red-600 hover:bg-red-500 text-white'
         };
       case '/relatorios':
         return {
