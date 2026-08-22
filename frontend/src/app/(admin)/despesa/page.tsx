@@ -19,6 +19,33 @@ const formatDateToISO = (brDate: string) => {
   return `${y}-${m}-${d}`;
 };
 
+const maskDate = (value: string) => {
+  const v = value.replace(/\D/g, '').slice(0, 8);
+  if (v.length <= 2) return v;
+  if (v.length <= 4) return `${v.slice(0, 2)}/${v.slice(2)}`;
+  return `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
+};
+
+const maskCurrency = (value: string) => {
+  let v = value.replace(/\D/g, '');
+  if (!v) return '';
+  return (Number(v) / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const isValidCalendarDate = (brDate: string): boolean => {
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(brDate)) return false;
+  const [d, m, y] = brDate.split('/').map(Number);
+  const date = new Date(y, m - 1, d);
+  return (
+    date.getFullYear() === y &&
+    date.getMonth() === m - 1 &&
+    date.getDate() === d
+  );
+};
+
 interface ExpenseForm {
   supplierName: string;
   description: string;
@@ -46,6 +73,8 @@ export default function Despesas() {
   const [filterStatus, setFilterStatus] = useState('');
 
   const [formData, setFormData] = useState<ExpenseForm>(emptyForm);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ supplierName?: string; amount?: string; date?: string }>({});
 
   const fetchExpenses = async () => {
     try {
@@ -70,6 +99,8 @@ export default function Despesas() {
     const handleOpenModal = () => {
       setEditingExp(null);
       setFormData(emptyForm);
+      setErrorMsg(null);
+      setFieldErrors({});
       setIsModalOpen(true);
     };
     window.addEventListener('open-new-modal', handleOpenModal);
@@ -86,11 +117,34 @@ export default function Despesas() {
       paymentMethod: exp.paymentMethod,
       status: exp.status,
     });
+    setErrorMsg(null);
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
   const handleSave = async () => {
     try {
+      setErrorMsg(null);
+      setFieldErrors({});
+
+      const errors: { supplierName?: string; amount?: string; date?: string } = {};
+      if (!formData.supplierName || !formData.supplierName.trim()) {
+        errors.supplierName = 'O nome do fornecedor é obrigatório.';
+      }
+      if (!formData.amount || !formData.amount.trim()) {
+        errors.amount = 'O valor é obrigatório.';
+      }
+      if (!formData.date || !formData.date.trim()) {
+        errors.date = 'A data de vencimento é obrigatória.';
+      } else if (!isValidCalendarDate(formData.date)) {
+        errors.date = 'Digite uma data de vencimento válida (DD/MM/AAAA).';
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+
       const payload = {
         supplierName: formData.supplierName,
         description: formData.description,
@@ -106,8 +160,14 @@ export default function Despesas() {
       }
       setIsModalOpen(false);
       fetchExpenses();
-    } catch (err) {
-      console.error('Erro ao salvar despesa:', err);
+    } catch (err: any) {
+      console.warn('Erro ao salvar despesa:', err.response?.data?.message || err.message);
+      const backendMsg = err.response?.data?.message;
+      if (Array.isArray(backendMsg)) {
+        setErrorMsg(backendMsg.join('. '));
+      } else {
+        setErrorMsg(backendMsg || 'Erro ao salvar despesa.');
+      }
     }
   };
 
@@ -286,9 +346,15 @@ export default function Despesas() {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingExp ? 'Editar Despesa' : 'Nova Despesa'}>
         <div className="space-y-4">
+          {errorMsg && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
+              {errorMsg}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Fornecedor</label>
             <input type="text" value={formData.supplierName} onChange={e => setFormData({...formData, supplierName: e.target.value})} className="w-full px-4 py-2 border rounded-lg outline-none" />
+            {fieldErrors.supplierName && <p className="text-xs text-red-600 font-medium mt-1">{fieldErrors.supplierName}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
@@ -297,11 +363,13 @@ export default function Despesas() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Valor (R$)</label>
-              <input type="text" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full px-4 py-2 border rounded-lg outline-none" />
+              <input type="text" value={formData.amount} onChange={e => setFormData({...formData, amount: maskCurrency(e.target.value)})} className="w-full px-4 py-2 border rounded-lg outline-none" />
+              {fieldErrors.amount && <p className="text-xs text-red-600 font-medium mt-1">{fieldErrors.amount}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Vencimento</label>
-              <input type="text" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} placeholder="DD/MM/YYYY" className="w-full px-4 py-2 border rounded-lg outline-none" />
+              <input type="text" value={formData.date} onChange={e => setFormData({...formData, date: maskDate(e.target.value)})} placeholder="DD/MM/YYYY" className="w-full px-4 py-2 border rounded-lg outline-none" />
+              {fieldErrors.date && <p className="text-xs text-red-600 font-medium mt-1">{fieldErrors.date}</p>}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

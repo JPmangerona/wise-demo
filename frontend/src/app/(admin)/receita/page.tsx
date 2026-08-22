@@ -19,6 +19,33 @@ const formatDateToISO = (brDate: string) => {
   return `${y}-${m}-${d}`;
 };
 
+const maskDate = (value: string) => {
+  const v = value.replace(/\D/g, '').slice(0, 8);
+  if (v.length <= 2) return v;
+  if (v.length <= 4) return `${v.slice(0, 2)}/${v.slice(2)}`;
+  return `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
+};
+
+const maskCurrency = (value: string) => {
+  let v = value.replace(/\D/g, '');
+  if (!v) return '';
+  return (Number(v) / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const isValidCalendarDate = (brDate: string): boolean => {
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(brDate)) return false;
+  const [d, m, y] = brDate.split('/').map(Number);
+  const date = new Date(y, m - 1, d);
+  return (
+    date.getFullYear() === y &&
+    date.getMonth() === m - 1 &&
+    date.getDate() === d
+  );
+};
+
 // ---- Tipo do formulário (dados que o front envia ao back) ----
 interface RevenueForm {
   clientName: string;
@@ -47,6 +74,8 @@ export default function Receitas() {
   const [filterStatus, setFilterStatus] = useState('');
 
   const [formData, setFormData] = useState<RevenueForm>(emptyForm);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ clientName?: string; amount?: string; date?: string }>({});
 
   // ---- Buscar dados do backend ----
   const fetchRevenues = async () => {
@@ -72,6 +101,8 @@ export default function Receitas() {
     const handleOpenModal = () => {
       setEditingRev(null);
       setFormData(emptyForm);
+      setErrorMsg(null);
+      setFieldErrors({});
       setIsModalOpen(true);
     };
     window.addEventListener('open-new-modal', handleOpenModal);
@@ -88,11 +119,34 @@ export default function Receitas() {
       paymentMethod: rev.paymentMethod,
       status: rev.status,
     });
+    setErrorMsg(null);
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
   const handleSave = async () => {
     try {
+      setErrorMsg(null);
+      setFieldErrors({});
+
+      const errors: { clientName?: string; amount?: string; date?: string } = {};
+      if (!formData.clientName || !formData.clientName.trim()) {
+        errors.clientName = 'O nome do cliente é obrigatório.';
+      }
+      if (!formData.amount || !formData.amount.trim()) {
+        errors.amount = 'O valor é obrigatório.';
+      }
+      if (!formData.date || !formData.date.trim()) {
+        errors.date = 'A data é obrigatória.';
+      } else if (!isValidCalendarDate(formData.date)) {
+        errors.date = 'Digite uma data de calendário válida (DD/MM/AAAA).';
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+
       const payload = {
         clientName: formData.clientName,
         description: formData.description,
@@ -109,8 +163,14 @@ export default function Receitas() {
       }
       setIsModalOpen(false);
       fetchRevenues(); // Recarrega a lista do backend
-    } catch (err) {
-      console.error('Erro ao salvar receita:', err);
+    } catch (err: any) {
+      console.warn('Erro ao salvar receita:', err.response?.data?.message || err.message);
+      const backendMsg = err.response?.data?.message;
+      if (Array.isArray(backendMsg)) {
+        setErrorMsg(backendMsg.join('. '));
+      } else {
+        setErrorMsg(backendMsg || 'Erro ao salvar receita.');
+      }
     }
   };
 
@@ -296,9 +356,15 @@ export default function Receitas() {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingRev ? 'Editar Receita' : 'Nova Receita'}>
         <div className="space-y-4">
+          {errorMsg && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
+              {errorMsg}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Cliente</label>
             <input type="text" value={formData.clientName} onChange={e => setFormData({ ...formData, clientName: e.target.value })} className="w-full px-4 py-2 border rounded-lg outline-none" />
+            {fieldErrors.clientName && <p className="text-xs text-red-600 font-medium mt-1">{fieldErrors.clientName}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
@@ -307,11 +373,13 @@ export default function Receitas() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Valor (R$)</label>
-              <input type="text" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="w-full px-4 py-2 border rounded-lg outline-none" />
+              <input type="text" value={formData.amount} onChange={e => setFormData({ ...formData, amount: maskCurrency(e.target.value) })} className="w-full px-4 py-2 border rounded-lg outline-none" />
+              {fieldErrors.amount && <p className="text-xs text-red-600 font-medium mt-1">{fieldErrors.amount}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Data</label>
-              <input type="text" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} placeholder="DD/MM/YYYY" className="w-full px-4 py-2 border rounded-lg outline-none" />
+              <input type="text" value={formData.date} onChange={e => setFormData({ ...formData, date: maskDate(e.target.value) })} placeholder="DD/MM/YYYY" className="w-full px-4 py-2 border rounded-lg outline-none" />
+              {fieldErrors.date && <p className="text-xs text-red-600 font-medium mt-1">{fieldErrors.date}</p>}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
