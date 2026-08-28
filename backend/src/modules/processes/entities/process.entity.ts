@@ -34,6 +34,9 @@ export class ProcessEntity {
   @Column({ name: 'client_id', type: 'uuid', nullable: true })
   clientId: string; // FK para a tabela clients (o cliente vinculado ao processo)
 
+  @Column({ name: 'adverse_party', type: 'varchar', length: 255, nullable: true })
+  adverseParty: string;
+
   @Column({ name: 'created_by_id', type: 'uuid' })
   createdById: string;
 

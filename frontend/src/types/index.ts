@@ -199,6 +199,7 @@ export interface Process {
   tribunal?: string;
   vara?: string;
   clientId?: string;
+  adverseParty?: string;
   createdById: string;
   companyId: string;
   processUsers: ProcessUser[];

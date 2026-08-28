@@ -2,12 +2,32 @@
 
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Scale, Edit2, Search, Trash2, FolderOpen, Activity, AlertCircle, CheckCircle2, ChevronDown } from 'lucide-react';
+import {
+  Scale,
+  Edit2,
+  Search,
+  Trash2,
+  FolderOpen,
+  Activity,
+  AlertCircle,
+  CheckCircle2,
+  ChevronDown,
+  FileText,
+  Plus,
+  Calendar
+} from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import api from '@/services/api';
 import { User, Client, Process, ProcessStatus, PROCESS_STATUS_LABELS } from '@/types';
+import {
+  getStoredProcessGroups,
+  addMovementToProcessGroup,
+  updateProcessGroupInfo,
+  MOVEMENT_UPDATE_EVENT,
+  ProcessGroup,
+} from '@/services/movementStorage';
 
-// ---- Formulário ----
+// ---- Formulário de Processo ----
 interface ProcessForm {
   cnj: string;
   title: string;
@@ -16,6 +36,7 @@ interface ProcessForm {
   vara: string;
   description: string;
   clientId: string;
+  adverseParty: string;
   userIds: string[];
 }
 
@@ -27,6 +48,7 @@ const emptyForm: ProcessForm = {
   vara: '',
   description: '',
   clientId: '',
+  adverseParty: '',
   userIds: [],
 };
 
@@ -46,6 +68,28 @@ export default function ProcessosPage() {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ cnj?: string; title?: string }>({});
+
+  // ---- Estados do Modal de Movimentações ----
+  const [isMovementsModalOpen, setIsMovementsModalOpen] = useState(false);
+  const [selectedProcessForMovements, setSelectedProcessForMovements] = useState<Process | null>(null);
+  const [storedGroups, setStoredGroups] = useState<ProcessGroup[]>([]);
+
+  const [newMovDate, setNewMovDate] = useState('08/25/2026, 10:35 AM');
+  const [newMovOrigin, setNewMovOrigin] = useState('Manual');
+  const [newMovDescription, setNewMovDescription] = useState('');
+
+  // Carregar movimentações armazenadas
+  useEffect(() => {
+    const syncGroups = () => setStoredGroups(getStoredProcessGroups());
+    syncGroups();
+
+    window.addEventListener(MOVEMENT_UPDATE_EVENT, syncGroups);
+    window.addEventListener('storage', syncGroups);
+    return () => {
+      window.removeEventListener(MOVEMENT_UPDATE_EVENT, syncGroups);
+      window.removeEventListener('storage', syncGroups);
+    };
+  }, []);
 
   // ---- Fetch de dados ----
   const fetchData = async () => {
@@ -73,7 +117,7 @@ export default function ProcessosPage() {
     return () => window.clearTimeout(timeout);
   }, []);
 
-  // Listener para abrir modal de novo processo via evento externo (ex: botão do Header)
+  // Listener para abrir modal de novo processo via evento externo
   useEffect(() => {
     const handleOpenModal = () => {
       setEditingProcess(null);
@@ -91,16 +135,7 @@ export default function ProcessosPage() {
   const getUserName = (id?: string) => users.find((u) => u.id === id)?.name || '-';
   const getClientName = (id?: string) => clients.find((c) => c.id === id)?.name || '-';
 
-  // Extrai os nomes dos usuários vinculados ao processo via processUsers
-  const getAssignedUserNames = (process: Process): string => {
-    if (!process.processUsers || process.processUsers.length === 0) return '-';
-    return process.processUsers
-      .map((pu) => getUserName(pu.userId))
-      .filter((name) => name !== '-')
-      .join(', ') || '-';
-  };
-
-  // ---- Handlers ----
+  // ---- Handlers de Processos ----
   const handleEdit = (process: Process) => {
     setEditingProcess(process);
     setFormData({
@@ -111,6 +146,7 @@ export default function ProcessosPage() {
       vara: process.vara || '',
       description: process.description || '',
       clientId: process.clientId || '',
+      adverseParty: process.adverseParty || '',
       userIds: process.processUsers?.map((pu) => pu.userId) || [],
     });
     setErrorMsg(null);
@@ -154,13 +190,25 @@ export default function ProcessosPage() {
         vara: formData.vara || undefined,
         description: formData.description || undefined,
         clientId: formData.clientId || undefined,
+        adverseParty: formData.adverseParty || undefined,
         userIds: formData.userIds.length > 0 ? formData.userIds : undefined,
       };
 
+      let savedId = editingProcess?.id;
       if (editingProcess) {
         await api.put(`/processes/${editingProcess.id}`, payload);
       } else {
-        await api.post('/processes', payload);
+        const res = await api.post('/processes', payload);
+        savedId = res.data?.id;
+      }
+
+      if (savedId) {
+        updateProcessGroupInfo(savedId, {
+          processName: formData.title || formData.cnj || 'Sem Título',
+          clientName: getClientName(formData.clientId),
+          adverseParty: formData.adverseParty || '-',
+          courtCity: `${formData.tribunal || '-'} - ${formData.vara || '-'}`,
+        });
       }
 
       setIsModalOpen(false);
@@ -193,13 +241,46 @@ export default function ProcessosPage() {
     }
   };
 
-  const toggleUser = (userId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      userIds: prev.userIds.includes(userId)
-        ? prev.userIds.filter((id) => id !== userId)
-        : [...prev.userIds, userId],
-    }));
+  // ---- Handlers do Modal de Movimentações ----
+  const openMovementsModal = (process: Process) => {
+    setSelectedProcessForMovements(process);
+    setStoredGroups(getStoredProcessGroups());
+
+    const now = new Date();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const year = now.getFullYear();
+    let hours = now.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    setNewMovDate(`${month}/${day}/${year}, ${hours.toString().padStart(2, '0')}:${minutes} ${ampm}`);
+    setNewMovOrigin('Manual');
+    setNewMovDescription('');
+    setIsMovementsModalOpen(true);
+  };
+
+  const handleAddMovement = () => {
+    if (!selectedProcessForMovements || !newMovDescription.trim()) return;
+
+    const process = selectedProcessForMovements;
+    const clientName = getClientName(process.clientId);
+    const adverseParty = process.adverseParty || '-';
+    const courtCity = `${process.tribunal || '-'} - ${process.vara || '-'}`;
+    const processName = process.title || process.cnj || 'Sem Título';
+
+    addMovementToProcessGroup(
+      process.id,
+      processName,
+      clientName,
+      adverseParty,
+      courtCity,
+      newMovDate || '08/25/2026, 10:35 AM',
+      (newMovOrigin || 'MANUAL').toUpperCase() as any,
+      newMovDescription.trim()
+    );
+
+    setNewMovDescription('');
   };
 
   // ---- Filtro ----
@@ -208,7 +289,8 @@ export default function ProcessosPage() {
     const matchesSearch =
       process.title?.toLowerCase().includes(search) ||
       process.cnj?.toLowerCase().includes(search) ||
-      process.tribunal?.toLowerCase().includes(search);
+      process.tribunal?.toLowerCase().includes(search) ||
+      process.adverseParty?.toLowerCase().includes(search);
     const matchesStatus = filterStatus ? process.status === filterStatus : true;
     return matchesSearch && matchesStatus;
   });
@@ -217,10 +299,10 @@ export default function ProcessosPage() {
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
       {/* ---- Métricas ---- */}
       <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Metric title="Ativos" value={processes.filter(p => p.status === 'ATIVO').length} icon={<Activity className="w-6 h-6" />} color="bg-blue-500" />
-        <Metric title="Suspensos" value={processes.filter(p => p.status === 'SUSPENSO').length} icon={<AlertCircle className="w-6 h-6" />} color="bg-amber-500" />
-        <Metric title="Arquivados" value={processes.filter(p => p.status === 'ARQUIVADO').length} icon={<FolderOpen className="w-6 h-6" />} color="bg-slate-500" />
-        <Metric title="Encerrados" value={processes.filter(p => p.status === 'ENCERRADO').length} icon={<CheckCircle2 className="w-6 h-6" />} color="bg-emerald-500" />
+        <Metric title="Ativos" value={processes.filter((p) => p.status === 'ATIVO').length} icon={<Activity className="w-6 h-6" />} color="bg-blue-500" />
+        <Metric title="Suspensos" value={processes.filter((p) => p.status === 'SUSPENSO').length} icon={<AlertCircle className="w-6 h-6" />} color="bg-amber-500" />
+        <Metric title="Arquivados" value={processes.filter((p) => p.status === 'ARQUIVADO').length} icon={<FolderOpen className="w-6 h-6" />} color="bg-slate-500" />
+        <Metric title="Encerrados" value={processes.filter((p) => p.status === 'ENCERRADO').length} icon={<CheckCircle2 className="w-6 h-6" />} color="bg-emerald-500" />
       </section>
 
       {/* ---- Barra de busca e filtro ---- */}
@@ -258,7 +340,6 @@ export default function ProcessosPage() {
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Número / Título</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Tribunal / Vara</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Cliente</th>
-                {/* <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Responsáveis</th> */}
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center">Status</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-right">Ações</th>
               </tr>
@@ -281,22 +362,43 @@ export default function ProcessosPage() {
                   <td className="px-6 py-4">
                     <span className="text-sm text-slate-700">{getClientName(process.clientId)}</span>
                   </td>
-                  {/* <td className="px-6 py-4">
-                    <span className="text-sm text-slate-700">{getAssignedUserNames(process)}</span>
-                  </td> */}
                   <td className="px-6 py-4 text-center">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-tight 
-                      ${process.status === 'ATIVO' ? 'bg-blue-50 text-blue-700' : 
-                        process.status === 'ENCERRADO' ? 'bg-emerald-50 text-emerald-700' : 
-                        process.status === 'SUSPENSO' ? 'bg-amber-50 text-amber-700' : 
-                        'bg-slate-100 text-slate-700'}`}>
+                      ${process.status === 'ATIVO' ? 'bg-blue-50 text-blue-700' :
+                        process.status === 'ENCERRADO' ? 'bg-emerald-50 text-emerald-700' :
+                          process.status === 'SUSPENSO' ? 'bg-amber-50 text-amber-700' :
+                            'bg-slate-100 text-slate-700'}`}>
                       {PROCESS_STATUS_LABELS[process.status]}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => handleEdit(process)} className="p-2 text-on-surface-variant hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
-                      <button onClick={() => confirmDelete(process.id)} className="p-2 text-on-surface-variant hover:text-error transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    <div className="flex justify-end gap-2 items-center">
+                      {/* Botão de Movimentações (Ícone de documento ao lado do lápis - img2) */}
+                      <button
+                        onClick={() => openMovementsModal(process)}
+                        title="Ver movimentações do processo"
+                        className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <FileText className="w-4 h-4 stroke-[1.8]" />
+                      </button>
+
+                      {/* Botão Editar Processo */}
+                      <button
+                        onClick={() => handleEdit(process)}
+                        title="Editar processo"
+                        className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Edit2 className="w-4 h-4 stroke-[1.8]" />
+                      </button>
+
+                      {/* Botão Excluir Processo */}
+                      <button
+                        onClick={() => confirmDelete(process.id)}
+                        title="Excluir processo"
+                        className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4 stroke-[1.8]" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -306,7 +408,127 @@ export default function ProcessosPage() {
         </div>
       </section>
 
-      {/* ---- Modal Criar/Editar ---- */}
+      {/* ---- Modal: Movimentações do Processo (img3) ---- */}
+      <Modal
+        isOpen={isMovementsModalOpen}
+        onClose={() => setIsMovementsModalOpen(false)}
+        title={`Movimentações do Processo: ${selectedProcessForMovements?.title || selectedProcessForMovements?.cnj || ''}`}
+        maxWidth="max-w-4xl"
+      >
+        <div className="space-y-6 pt-1">
+          {/* Subtítulo do Cliente e Contra */}
+          <div className="text-xs font-semibold text-slate-600 border-b border-slate-100 pb-3 flex items-center gap-4">
+            <span>Cliente: <strong className="text-slate-800 font-bold">{selectedProcessForMovements?.clientId ? getClientName(selectedProcessForMovements.clientId) : '-'}</strong></span>
+            <span className="text-slate-300">|</span>
+            <span>Contra: <strong className="text-slate-800 font-bold">{selectedProcessForMovements?.adverseParty || '-'}</strong></span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Coluna Esquerda: HISTÓRICO DE MOVIMENTAÇÕES */}
+            <div className="lg:col-span-7 space-y-4">
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                HISTÓRICO DE MOVIMENTAÇÕES
+              </h4>
+
+              {(() => {
+                const processId = selectedProcessForMovements?.id || '';
+                const group = storedGroups.find(g => g.id === processId);
+                const currentMovs = group?.movements || [];
+
+                if (currentMovs.length === 0) {
+                  return (
+                    <div className="p-6 bg-slate-50/70 border border-slate-100 rounded-xl text-center space-y-2">
+                      <FileText className="w-8 h-8 text-slate-300 mx-auto" />
+                      <p className="text-xs text-slate-500 font-medium">Nenhuma movimentação registrada para este processo.</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="pl-4 space-y-4 relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200/80">
+                    {currentMovs.map((mov) => (
+                      <div key={mov.id} className="relative pl-5">
+                        <div className="absolute -left-2 top-3 w-2.5 h-2.5 rounded-full bg-slate-400 border-2 border-white ring-1 ring-slate-100" />
+                        <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-500">{mov.date}</span>
+                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-200/80 text-slate-700 tracking-wider">
+                              {mov.origin}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-800 font-normal leading-relaxed">{mov.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Coluna Direita: LANÇAR MOVIMENTAÇÃO */}
+            <div className="lg:col-span-5">
+              <div className="bg-slate-50/80 border border-slate-200/70 rounded-xl p-5 space-y-4">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                  LANÇAR MOVIMENTAÇÃO
+                </h4>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
+                      DATA / HORA
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={newMovDate}
+                        onChange={(e) => setNewMovDate(e.target.value)}
+                        className="w-full px-3 py-2.5 pr-10 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20"
+                      />
+                      <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
+                      ORIGEM
+                    </label>
+                    <input
+                      type="text"
+                      value="Manual"
+                      readOnly
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 outline-none select-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
+                      DESCRIÇÃO
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={newMovDescription}
+                      onChange={(e) => setNewMovDescription(e.target.value)}
+                      placeholder="Descreva o andamento do processo..."
+                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAddMovement}
+                    className="w-full py-3 px-4 bg-[#192847] hover:bg-[#111c34] text-white font-bold rounded-lg text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer mt-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Lançar Andamento</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ---- Modal Criar/Editar Processo ---- */}
       <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setIsUserDropdownOpen(false); }} title={editingProcess ? 'Editar Processo' : 'Adicionar Novo Processo'}>
         <div className="space-y-4">
           {errorMsg && (
@@ -349,13 +571,25 @@ export default function ProcessosPage() {
             </div>
           </div>
 
-          {/* Cliente */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Cliente Vinculado</label>
-            <select value={formData.clientId} onChange={(e) => setFormData({ ...formData, clientId: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
-              <option value="">Nenhum cliente vinculado</option>
-              {clients.map((client) => <option key={client.id} value={client.id}>{client.name}{client.cpfCnpj ? ` — ${client.cpfCnpj}` : ''}</option>)}
-            </select>
+          {/* Cliente Vinculado + Contra (Parte Contrária) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Cliente Vinculado</label>
+              <select value={formData.clientId} onChange={(e) => setFormData({ ...formData, clientId: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
+                <option value="">Nenhum cliente vinculado</option>
+                {clients.map((client) => <option key={client.id} value={client.id}>{client.name}{client.cpfCnpj ? ` — ${client.cpfCnpj}` : ''}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Contra (Parte Contrária)</label>
+              <input
+                type="text"
+                placeholder="Ex: Mercado Livre"
+                value={formData.adverseParty}
+                onChange={(e) => setFormData({ ...formData, adverseParty: e.target.value })}
+                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-slate-800"
+              />
+            </div>
           </div>
 
           {/* Descrição */}
@@ -364,61 +598,11 @@ export default function ProcessosPage() {
             <textarea placeholder="Detalhes da causa..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none min-h-24 resize-y" />
           </div>
 
-          {/* Responsáveis (Multi-select com checkboxes) */}
-          {/* 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Responsáveis pelo Processo</label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white text-left flex items-center justify-between"
-              >
-                <span className="text-sm text-slate-700 truncate">
-                  {formData.userIds.length === 0
-                    ? 'Selecione os responsáveis...'
-                    : formData.userIds.map((id) => getUserName(id)).join(', ')}
-                </span>
-                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isUserDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {users.length === 0 ? (
-                    <p className="px-4 py-3 text-sm text-slate-400">Nenhum usuário cadastrado.</p>
-                  ) : (
-                    users.map((user) => (
-                      <label
-                        key={user.id}
-                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.userIds.includes(user.id)}
-                          onChange={() => toggleUser(user.id)}
-                          className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <div className="flex flex-col">
-                          <span className="text-sm text-slate-700">{user.name}</span>
-                          <span className="text-xs text-slate-400">{user.email}</span>
-                        </div>
-                      </label>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-            {formData.userIds.length > 0 && (
-              <p className="text-xs text-slate-500 mt-1">{formData.userIds.length} responsável(is) selecionado(s)</p>
-            )}
-          </div>
-          */}
-
           <Actions onCancel={() => { setIsModalOpen(false); setIsUserDropdownOpen(false); }} onConfirm={handleSave} label="Salvar Processo" />
         </div>
       </Modal>
 
-      {/* ---- Modal Excluir ---- */}
+      {/* ---- Modal Excluir Processo ---- */}
       <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Excluir Processo">
         <div className="space-y-4">
           <p className="text-slate-600">Deseja mesmo apagar este processo? Esta ação não poderá ser desfeita.</p>

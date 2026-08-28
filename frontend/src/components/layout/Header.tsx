@@ -72,6 +72,14 @@ export function Header() {
           actionText: 'Novo Evento',
           actionStyle: 'bg-blue-900 hover:bg-blue-800 text-white'
         };
+      case '/movimentacoes':
+        return {
+          title: 'Movimentações',
+          cat: 'Operacional',
+          sub: 'Andamentos',
+          actionText: null,
+          actionStyle: null
+        };
       case '/dashboard':
       default:
         return {

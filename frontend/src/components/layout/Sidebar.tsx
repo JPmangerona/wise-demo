@@ -32,6 +32,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     { href: '/agenda', label: 'Agenda', icon: Calendar, category: 'Operacional' },
     { href: '/tarefa', label: 'Tarefa', icon: CheckSquare, category: 'Operacional' },
     { href: '/processos', label: 'Processos', icon: Scale, category: 'Operacional' },
+    { href: '/movimentacoes', label: 'Movimentações', icon: FileText, category: 'Operacional' },
     // { href: '/usuarios', label: 'Usuários', icon: Contact, category: 'Contatos' },
     { href: '/clientes', label: 'Clientes', icon: Users, category: 'Contatos' },
     // { href: '/relatorios', label: 'Relatórios', icon: ChartNoAxesCombined, category: 'Financeiro' },

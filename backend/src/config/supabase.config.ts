@@ -12,7 +12,7 @@ export class SupabaseConfig implements TypeOrmOptionsFactory {
             type: 'postgres',
             url: this.configService.get<string>('DATABASE_URL'),
             entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-            synchronize: true,                   // Cria as tabelas automaticamente em desenvolvimento
+            synchronize: true,                  // Habilitado para sincronizar automaticamente alterações na entidade (ex: adverse_party)
             ssl: { rejectUnauthorized: false },  // Obrigatório para conexão segura com o Supabase
         };
     }

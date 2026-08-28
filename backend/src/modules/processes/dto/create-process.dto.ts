@@ -32,6 +32,11 @@ export class CreateProcessDto {
   @IsOptional()
   clientId?: string; // UUID do cliente vinculado ao processo
 
+  @IsString({ message: 'A parte contrária deve ser um texto' })
+  @IsOptional()
+  @MaxLength(255, { message: 'A parte contrária não pode ter mais de 255 caracteres' })
+  adverseParty?: string;
+
   // Array de UUIDs dos usuários responsáveis pelo processo (relação N:M)
   @IsArray()
   @IsUUID('4', { each: true })
