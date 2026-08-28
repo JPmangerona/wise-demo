@@ -184,7 +184,7 @@ export class ProcessesService {
     if (j === 8) {
       const MAPA_TRIBUNAIS: Record<number, string> = {
         19: 'tjrj',
-        26: 'tjsp',
+        26: numeroLimpo.endsWith('0000') ? 'tjsp/segundo-grau' : 'tjsp/primeiro-grau',
         16: 'tjpr',
         13: 'tjmg',
         21: 'tjrs',
@@ -192,7 +192,21 @@ export class ProcessesService {
       tribunalSigla = MAPA_TRIBUNAIS[tr] || 'tjpr';
     }
 
-    const url = `https://api.infosimples.com/api/v2/consultas/tribunal/${tribunalSigla}/processo`;
+    const isTjsp = tribunalSigla.startsWith('tjsp');
+    const url = isTjsp
+      ? `https://api.infosimples.com/api/v2/consultas/tribunal/${tribunalSigla}`
+      : `https://api.infosimples.com/api/v2/consultas/tribunal/${tribunalSigla}/processo`;
+
+    const bodyParams: Record<string, string> = {
+      token: token,
+      ignore_cache: 'true',
+    };
+
+    if (isTjsp) {
+      bodyParams.processo = cnj;
+    } else {
+      bodyParams.numero_processo = cnj;
+    }
 
     try {
       const response = await fetch(url, {
@@ -200,11 +214,7 @@ export class ProcessesService {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({
-          token: token,
-          numero_processo: cnj,
-          ignore_cache: 'true',
-        }),
+        body: new URLSearchParams(bodyParams),
       });
 
       if (!response.ok) {
@@ -223,21 +233,27 @@ export class ProcessesService {
         throw new BadRequestException('Nenhum processo encontrado para este número na Infosimples.');
       }
 
+      const rawMovs = isTjsp
+        ? (processoData.ultimas_movimentacoes || [])
+        : (processoData.movimentacoes || []);
+
+      const mappedMovs = rawMovs.map((m: any) => ({
+        sequencial: m.seq || undefined,
+        data: m.data,
+        descricao: isTjsp ? m.movimento : m.evento,
+        movimentador: m.movimentador || 'Não informado',
+      }));
+
       return {
         numero: cnj,
         tribunal: tribunalSigla.toUpperCase(),
-        comarca: body.data[0].nome_comarca || '',
-        juizo: body.data[0].nome_juizo || '',
-        classe: processoData.classe_processual || '',
-        assunto: processoData.assunto_principal || '',
+        comarca: body.data[0].nome_comarca || body.data[0].foro || '',
+        juizo: body.data[0].nome_juizo || body.data[0].vara || '',
+        classe: processoData.classe_processual || processoData.classe || '',
+        assunto: processoData.assunto_principal || processoData.assunto || '',
         juiz: processoData.juiz || '',
         partes: processoData.partes || { autor: [], réu: [] },
-        movimentacoes: (processoData.movimentacoes || []).map((m: any) => ({
-          sequencial: m.seq,
-          data: m.data,
-          descricao: m.evento,
-          movimentador: m.movimentador || 'Não informado',
-        })),
+        movimentacoes: mappedMovs,
       };
     } catch (error) {
       if (error instanceof BadRequestException) throw error;

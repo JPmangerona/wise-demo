@@ -74,7 +74,7 @@ export default function ProcessosPage() {
   const [selectedProcessForMovements, setSelectedProcessForMovements] = useState<Process | null>(null);
   const [storedGroups, setStoredGroups] = useState<ProcessGroup[]>([]);
 
-  const [newMovDate, setNewMovDate] = useState('08/25/2026, 10:35 AM');
+  const [newMovDate, setNewMovDate] = useState('25/08/2026, 10:35');
   const [newMovOrigin, setNewMovOrigin] = useState('Manual');
   const [newMovDescription, setNewMovDescription] = useState('');
 
@@ -254,11 +254,9 @@ export default function ProcessosPage() {
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
     const day = now.getDate().toString().padStart(2, '0');
     const year = now.getFullYear();
-    let hours = now.getHours();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12 || 12;
+    const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
-    setNewMovDate(`${month}/${day}/${year}, ${hours.toString().padStart(2, '0')}:${minutes} ${ampm}`);
+    setNewMovDate(`${day}/${month}/${year}, ${hours}:${minutes}`);
     setNewMovOrigin('Manual');
     setNewMovDescription('');
     setIsMovementsModalOpen(true);
@@ -279,7 +277,7 @@ export default function ProcessosPage() {
       clientName,
       adverseParty,
       courtCity,
-      newMovDate || '08/25/2026, 10:35 AM',
+      newMovDate || '25/08/2026, 10:35',
       (newMovOrigin || 'MANUAL').toUpperCase() as any,
       newMovDescription.trim()
     );
@@ -311,11 +309,9 @@ export default function ProcessosPage() {
     const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
     const day = dateObj.getDate().toString().padStart(2, '0');
     const year = dateObj.getFullYear();
-    let hours = dateObj.getHours();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12 || 12;
+    const hours = dateObj.getHours().toString().padStart(2, '0');
     const minutes = dateObj.getMinutes().toString().padStart(2, '0');
-    return `${month}/${day}/${year}, ${hours.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+    return `${day}/${month}/${year}, ${hours}:${minutes}`;
   };
 
   const handleSyncInfosimples = async () => {

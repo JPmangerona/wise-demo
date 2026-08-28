@@ -72,6 +72,7 @@ export default function Movimentacoes() {
 
   const [processes, setProcesses] = useState<ProcessGroup[]>([]);
   const [selectedMovements, setSelectedMovements] = useState<Record<string, string[]>>({});
+  const [collapsedProcesses, setCollapsedProcesses] = useState<Record<string, boolean>>({});
 
   // Carregar e sincronizar movimentações salvas
   useEffect(() => {
@@ -367,6 +368,14 @@ export default function Movimentacoes() {
     showFeedback('Nova movimentação cadastrada com sucesso!');
   };
 
+  // Handler: Alternar colapso/visibilidade das movimentações de um processo
+  const toggleProcessCollapse = (processId: string) => {
+    setCollapsedProcesses(prev => ({
+      ...prev,
+      [processId]: !prev[processId]
+    }));
+  };
+
   // Handler: Alternar seleção de uma única movimentação de um processo
   const toggleMovementSelection = (procId: string, movId: string) => {
     setSelectedMovements(prev => {
@@ -613,79 +622,100 @@ export default function Movimentacoes() {
             </p>
           </div>
         ) : (
-          filteredProcesses.map(proc => (
-            <div key={proc.id} className="bg-surface-container-lowest rounded-xl border border-slate-200/80 shadow-xs p-6 flex flex-col gap-6">
-              {/* Header do Processo */}
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-blue-100/60 text-blue-700 flex items-center justify-center shrink-0">
-                    <Scale className="w-5 h-5" />
+          filteredProcesses.map(proc => {
+            const isCollapsed = !!collapsedProcesses[proc.id];
+            return (
+              <div key={proc.id} className="bg-surface-container-lowest rounded-xl border border-slate-200/80 shadow-xs p-6 flex flex-col gap-6">
+                {/* Header do Processo */}
+                <div 
+                  onClick={() => toggleProcessCollapse(proc.id)}
+                  className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-100/80 transition-colors select-none"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-blue-100/60 text-blue-700 flex items-center justify-center shrink-0">
+                      <Scale className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">PROCESSO</p>
+                      <h4 className="text-base font-bold text-slate-900">{proc.processName}</h4>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">PROCESSO</p>
-                    <h4 className="text-base font-bold text-slate-900">{proc.processName}</h4>
+
+                  <div className="flex items-center gap-6 justify-between md:justify-end w-full md:w-auto">
+                    <div className="grid grid-cols-3 gap-6 text-left">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">CLIENTE</p>
+                        <p className="text-sm font-semibold text-slate-800">{proc.clientName}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">CONTRA</p>
+                        <p className="text-sm font-semibold text-slate-800">{proc.adverseParty}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">VARA / CIDADE</p>
+                        <p className="text-sm font-semibold text-slate-800">{proc.courtCity}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center shrink-0 transition-colors">
+                      <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`} />
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-6 text-left">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">CLIENTE</p>
-                    <p className="text-sm font-semibold text-slate-800">{proc.clientName}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">CONTRA</p>
-                    <p className="text-sm font-semibold text-slate-800">{proc.adverseParty}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">VARA / CIDADE</p>
-                    <p className="text-sm font-semibold text-slate-800">{proc.courtCity}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Barra de Validação de Movimentações Selecionadas */}
-              {activeTab === 'VALIDAR' ? (
-                (selectedMovements[proc.id] || []).length > 0 ? (
-                  <div className="flex items-center justify-between bg-emerald-50/50 border border-emerald-100/60 rounded-xl px-4 py-3 text-xs text-slate-700 font-sans animate-in fade-in duration-200">
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold text-emerald-800 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        {(selectedMovements[proc.id] || []).length} movimentação(ões) selecionada(s) para validação.
-                      </span>
+                {/* Barra de Validação de Movimentações Selecionadas */}
+                {!isCollapsed && activeTab === 'VALIDAR' ? (
+                  (selectedMovements[proc.id] || []).length > 0 ? (
+                    <div className="flex items-center justify-between bg-emerald-50/50 border border-emerald-100/60 rounded-xl px-4 py-3 text-xs text-slate-700 font-sans animate-in fade-in duration-200">
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold text-emerald-800 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          {(selectedMovements[proc.id] || []).length} movimentação(ões) selecionada(s) para validação.
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSelectAllForProcess(proc.id, proc.movements);
+                          }}
+                          className="text-slate-400 hover:text-slate-600 hover:underline font-bold cursor-pointer text-[10px] uppercase tracking-wider pl-3 border-l border-slate-200"
+                        >
+                          {(selectedMovements[proc.id] || []).length === proc.movements.length ? 'Desmarcar todas' : 'Selecionar todas'}
+                        </button>
+                      </div>
                       <button
-                        onClick={() => toggleSelectAllForProcess(proc.id, proc.movements)}
-                        className="text-slate-400 hover:text-slate-600 hover:underline font-bold cursor-pointer text-[10px] uppercase tracking-wider pl-3 border-l border-slate-200"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleValidateSelected(proc.id);
+                        }}
+                        className="py-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                       >
-                        {(selectedMovements[proc.id] || []).length === proc.movements.length ? 'Desmarcar todas' : 'Selecionar todas'}
+                        <Check className="w-4 h-4 stroke-[2.5]" />
+                        <span>Validar Selecionadas</span>
                       </button>
                     </div>
-                    <button
-                      onClick={() => handleValidateSelected(proc.id)}
-                      className="py-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Check className="w-4 h-4 stroke-[2.5]" />
-                      <span>Validar Selecionadas</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between bg-slate-50/50 border border-slate-100/80 rounded-xl px-4 py-2.5 text-[11px] text-slate-500 font-sans">
-                    <span>Nenhuma movimentação selecionada neste processo.</span>
-                    <button
-                      onClick={() => toggleSelectAllForProcess(proc.id, proc.movements)}
-                      className="text-blue-600 hover:text-blue-700 hover:underline font-bold cursor-pointer uppercase tracking-wider text-[10px]"
-                    >
-                      Selecionar todas
-                    </button>
-                  </div>
-                )
-              ) : null}
+                  ) : (
+                    <div className="flex items-center justify-between bg-slate-50/50 border border-slate-100/80 rounded-xl px-4 py-2.5 text-[11px] text-slate-500 font-sans">
+                      <span>Nenhuma movimentação selecionada neste processo.</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelectAllForProcess(proc.id, proc.movements);
+                        }}
+                        className="text-blue-600 hover:text-blue-700 hover:underline font-bold cursor-pointer uppercase tracking-wider text-[10px]"
+                      >
+                        Selecionar todas
+                      </button>
+                    </div>
+                  )
+                ) : null}
 
-              {/* Linha do Tempo de Movimentações */}
-              <div className="pl-6 flex flex-col gap-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-                {proc.movements.map(mov => (
-                  <div key={mov.id} className="relative pl-6">
-                    {/* Node Dot ou Checkbox Circular */}
-                    {activeTab === 'VALIDAR' ? (
+                {/* Linha do Tempo de Movimentações */}
+                {!isCollapsed && (
+                  <div className="pl-6 flex flex-col gap-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                    {proc.movements.map(mov => (
+                      <div key={mov.id} className="relative pl-6">
+                        {/* Node Dot ou Checkbox Circular */}
+                        {activeTab === 'VALIDAR' ? (
                       <button
                         onClick={() => toggleMovementSelection(proc.id, mov.id)}
                         className={`absolute -left-[15px] top-[13px] w-5 h-5 rounded-full border transition-all flex items-center justify-center cursor-pointer z-10 ${
@@ -767,8 +797,10 @@ export default function Movimentacoes() {
                   </div>
                 ))}
               </div>
-            </div>
-          ))
+            )}
+          </div>
+        );
+      })
         )}
       </section>
 
