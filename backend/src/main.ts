@@ -34,7 +34,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = parseInt(process.env.PORT || '3002', 10);
+  const port = parseInt(process.env.PORT || '5000', 10);
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 Backend rodando na porta ${port} no host 0.0.0.0`);
 }
