@@ -78,6 +78,10 @@ export default function ProcessosPage() {
   const [newMovOrigin, setNewMovOrigin] = useState('Manual');
   const [newMovDescription, setNewMovDescription] = useState('');
 
+  const [syncingInfosimples, setSyncingInfosimples] = useState(false);
+  const [syncingDatajud, setSyncingDatajud] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
+
   // Carregar movimentações armazenadas
   useEffect(() => {
     const syncGroups = () => setStoredGroups(getStoredProcessGroups());
@@ -283,6 +287,163 @@ export default function ProcessosPage() {
     setNewMovDescription('');
   };
 
+  const formatMovementDate = (dateStr: string): string => {
+    let dateObj: Date;
+    if (dateStr.includes('T')) {
+      dateObj = new Date(dateStr);
+    } else {
+      const parts = dateStr.split(' ');
+      if (parts.length < 2) return dateStr;
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].split(':');
+      if (dateParts.length < 3 || timeParts.length < 2) return dateStr;
+      dateObj = new Date(
+        parseInt(dateParts[2]),
+        parseInt(dateParts[1]) - 1,
+        parseInt(dateParts[0]),
+        parseInt(timeParts[0]),
+        parseInt(timeParts[1]),
+        timeParts[2] ? parseInt(timeParts[2]) : 0
+      );
+    }
+    if (isNaN(dateObj.getTime())) return dateStr;
+
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const day = dateObj.getDate().toString().padStart(2, '0');
+    const year = dateObj.getFullYear();
+    let hours = dateObj.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+    return `${month}/${day}/${year}, ${hours.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+  };
+
+  const handleSyncInfosimples = async () => {
+    if (!selectedProcessForMovements) return;
+    const process = selectedProcessForMovements;
+
+    setSyncingInfosimples(true);
+    setSyncStatus('Consultando Infosimples...');
+    try {
+      const res = await api.get(`/processes/infosimples/${process.cnj}`);
+      const movimentacoes = res.data?.movimentacoes || [];
+
+      if (movimentacoes.length === 0) {
+        setSyncStatus('Nenhuma movimentação encontrada na Infosimples.');
+        setTimeout(() => setSyncStatus(null), 3000);
+        return;
+      }
+
+      const clientName = getClientName(process.clientId);
+      const adverseParty = process.adverseParty || '-';
+      const courtCity = `${process.tribunal || '-'} - ${process.vara || '-'}`;
+      const processName = process.title || process.cnj || 'Sem Título';
+
+      const groups = getStoredProcessGroups();
+      const group = groups.find(g => g.id === process.id);
+      const existing = group?.movements || [];
+
+      let importedCount = 0;
+      const reversedMovs = [...movimentacoes].reverse();
+
+      for (const m of reversedMovs) {
+        const formattedDate = formatMovementDate(m.data || '');
+        const desc = m.descricao || '';
+
+        const isDuplicate = existing.some(em =>
+          em.description.trim() === desc.trim() &&
+          em.date === formattedDate
+        );
+
+        if (!isDuplicate) {
+          addMovementToProcessGroup(
+            process.id,
+            processName,
+            clientName,
+            adverseParty,
+            courtCity,
+            formattedDate,
+            'API_INFOSIMPLES',
+            desc
+          );
+          importedCount++;
+        }
+      }
+
+      setSyncStatus(`Sucesso! ${importedCount} novas movimentações importadas.`);
+      setTimeout(() => setSyncStatus(null), 4000);
+    } catch (err: any) {
+      console.error(err);
+      setSyncStatus(`Erro: ${err.response?.data?.message || err.message}`);
+      setTimeout(() => setSyncStatus(null), 4000);
+    } finally {
+      setSyncingInfosimples(false);
+    }
+  };
+
+  const handleSyncDatajud = async () => {
+    if (!selectedProcessForMovements) return;
+    const process = selectedProcessForMovements;
+
+    setSyncingDatajud(true);
+    setSyncStatus('Consultando DataJud...');
+    try {
+      const res = await api.get(`/processes/datajudi/${process.cnj}`);
+      const movimentacoes = res.data?.movimentacoes || [];
+
+      if (movimentacoes.length === 0) {
+        setSyncStatus('Nenhuma movimentação encontrada no DataJud.');
+        setTimeout(() => setSyncStatus(null), 3000);
+        return;
+      }
+
+      const clientName = getClientName(process.clientId);
+      const adverseParty = process.adverseParty || '-';
+      const courtCity = `${process.tribunal || '-'} - ${process.vara || '-'}`;
+      const processName = process.title || process.cnj || 'Sem Título';
+
+      const groups = getStoredProcessGroups();
+      const group = groups.find(g => g.id === process.id);
+      const existing = group?.movements || [];
+
+      let importedCount = 0;
+      const reversedMovs = [...movimentacoes].reverse();
+
+      for (const m of reversedMovs) {
+        const formattedDate = formatMovementDate(m.dataHora || '');
+        const desc = m.descricao || '';
+
+        const isDuplicate = existing.some(em =>
+          em.description.trim() === desc.trim() &&
+          em.date === formattedDate
+        );
+
+        if (!isDuplicate) {
+          addMovementToProcessGroup(
+            process.id,
+            processName,
+            clientName,
+            adverseParty,
+            courtCity,
+            formattedDate,
+            'API_DATAJUD',
+            desc
+          );
+          importedCount++;
+        }
+      }
+
+      setSyncStatus(`Sucesso! ${importedCount} novas movimentações importadas.`);
+      setTimeout(() => setSyncStatus(null), 4000);
+    } catch (err: any) {
+      console.error(err);
+      setSyncStatus(`Erro: ${err.response?.data?.message || err.message}`);
+      setTimeout(() => setSyncStatus(null), 4000);
+    } finally {
+      setSyncingDatajud(false);
+    }
+  };
+
   // ---- Filtro ----
   const filteredProcesses = processes.filter((process) => {
     const search = searchQuery.toLowerCase();
@@ -452,7 +613,11 @@ export default function ProcessosPage() {
                         <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-4 space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-500">{mov.date}</span>
-                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-200/80 text-slate-700 tracking-wider">
+                            <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border tracking-wider
+                              ${mov.origin === 'MANUAL' ? 'bg-slate-100 text-slate-700 border-slate-200' :
+                                mov.origin === 'API_INFOSIMPLES' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                  mov.origin === 'API_DATAJUD' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                    'bg-indigo-50 text-indigo-700 border-indigo-200'}`}>
                               {mov.origin}
                             </span>
                           </div>
@@ -466,7 +631,8 @@ export default function ProcessosPage() {
             </div>
 
             {/* Coluna Direita: LANÇAR MOVIMENTAÇÃO */}
-            <div className="lg:col-span-5">
+            <div className="lg:col-span-5 space-y-6">
+              {/* Lançar Manual */}
               <div className="bg-slate-50/80 border border-slate-200/70 rounded-xl p-5 space-y-4">
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
                   LANÇAR MOVIMENTAÇÃO
@@ -521,6 +687,57 @@ export default function ProcessosPage() {
                     <Plus className="w-4 h-4" />
                     <span>Lançar Andamento</span>
                   </button>
+                </div>
+              </div>
+
+              {/* Sincronização via API */}
+              <div className="bg-slate-50/80 border border-slate-200/70 rounded-xl p-5 space-y-4">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                  ATUALIZAÇÃO AUTOMÁTICA
+                </h4>
+                <p className="text-[11px] text-slate-500 leading-normal">
+                  Busque movimentações em tempo real usando as APIs de consulta integradas.
+                </p>
+
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    type="button"
+                    disabled={syncingInfosimples || syncingDatajud}
+                    onClick={handleSyncInfosimples}
+                    className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-bold rounded-lg text-xs transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {syncingInfosimples ? 'Buscando Infosimples...' : 'Sincronizar via Infosimples'}
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={syncingInfosimples || syncingDatajud}
+                    onClick={handleSyncDatajud}
+                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-bold rounded-lg text-xs transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {syncingDatajud ? 'Buscando DataJud...' : 'Sincronizar via DataJud'}
+                  </button>
+                </div>
+
+                {syncStatus && (
+                  <p className="text-[10px] font-bold text-center text-slate-600 animate-pulse">
+                    {syncStatus}
+                  </p>
+                )}
+
+                {/* Guia de Limitações / Dicas */}
+                <div className="pt-3 border-t border-slate-200/60 space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">
+                    Guia de Utilização:
+                  </span>
+                  <ul className="list-disc pl-3 text-[10px] text-slate-500 space-y-1.5 leading-relaxed">
+                    <li>
+                      <strong className="text-blue-700">Infosimples:</strong> Para processos <strong>Estaduais (TJPR, TJSP, etc.)</strong>. Traz dados completos em tempo real. Não suporta processos federais (TRF4) ou trabalhistas (TRTs).
+                    </li>
+                    <li>
+                      <strong className="text-emerald-700">DataJud (CNJ):</strong> Para <strong>qualquer tribunal (inclui TRF4 e TRTs)</strong>. É 100% gratuito, mas pode ter delay de sincronização e oculta nomes/CPFs por privacidade.
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>

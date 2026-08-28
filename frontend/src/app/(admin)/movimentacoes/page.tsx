@@ -71,6 +71,7 @@ export default function Movimentacoes() {
   const [filterOrigin, setFilterOrigin] = useState<string>('');
 
   const [processes, setProcesses] = useState<ProcessGroup[]>([]);
+  const [selectedMovements, setSelectedMovements] = useState<Record<string, string[]>>({});
 
   // Carregar e sincronizar movimentações salvas
   useEffect(() => {
@@ -228,6 +229,16 @@ export default function Movimentacoes() {
       });
       setProcesses(updated);
       saveStoredProcessGroups(updated);
+
+      // Limpar da seleção se for a movimentação excluída
+      setSelectedMovements(prev => {
+        const current = prev[targetToDelete.processId] || [];
+        return {
+          ...prev,
+          [targetToDelete.processId]: current.filter(id => id !== targetToDelete.movementId)
+        };
+      });
+
       showFeedback('Movimentação removida com sucesso!');
     }
     setIsDeleteModalOpen(false);
@@ -356,6 +367,61 @@ export default function Movimentacoes() {
     showFeedback('Nova movimentação cadastrada com sucesso!');
   };
 
+  // Handler: Alternar seleção de uma única movimentação de um processo
+  const toggleMovementSelection = (procId: string, movId: string) => {
+    setSelectedMovements(prev => {
+      const current = prev[procId] || [];
+      const isSelected = current.includes(movId);
+      const updated = isSelected
+        ? current.filter(id => id !== movId)
+        : [...current, movId];
+      return {
+        ...prev,
+        [procId]: updated
+      };
+    });
+  };
+
+  // Handler: Alternar "Selecionar Todas" as movimentações de um processo
+  const toggleSelectAllForProcess = (procId: string, movements: MovementItem[]) => {
+    const allMovIds = movements.map(m => m.id);
+    setSelectedMovements(prev => {
+      const current = prev[procId] || [];
+      const allSelected = allMovIds.every(id => current.includes(id));
+      const updated = allSelected ? [] : allMovIds;
+      return {
+        ...prev,
+        [procId]: updated
+      };
+    });
+  };
+
+  // Handler: Validar movimentações selecionadas de um processo específico
+  const handleValidateSelected = (procId: string) => {
+    const selectedIds = selectedMovements[procId] || [];
+    if (selectedIds.length === 0) return;
+
+    const updated = processes.map(p => {
+      if (p.id !== procId) return p;
+      return {
+        ...p,
+        movements: p.movements.map(m =>
+          selectedIds.includes(m.id) ? { ...m, status: 'VALIDATED' as MovementStatus } : m
+        ),
+      };
+    });
+
+    setProcesses(updated);
+    saveStoredProcessGroups(updated);
+
+    setSelectedMovements(prev => ({
+      ...prev,
+      [procId]: []
+    }));
+
+    showFeedback(`${selectedIds.length} movimentações validadas e enviadas para o Histórico!`);
+  };
+
   // Lógica do Calendário no Modal de Agenda (img3)
   const mYear = modalMonthDate.getFullYear();
   const mMonth = modalMonthDate.getMonth();
@@ -415,6 +481,8 @@ export default function Movimentacoes() {
       movements: matchingMovements,
     };
   }).filter(proc => proc.movements.length > 0);
+
+  const visibleMovementsCount = filteredProcesses.reduce((acc, p) => acc + p.movements.length, 0);
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto relative">
@@ -505,7 +573,7 @@ export default function Movimentacoes() {
       </section>
 
       {/* Abas: VALIDAR MOVIMENTAÇÃO | HISTÓRICO */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-200 pb-4 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-200 pb-4 gap-4 font-sans">
         <div className="flex items-center gap-8">
           <div className="flex gap-6">
             <button
@@ -533,7 +601,7 @@ export default function Movimentacoes() {
       </div>
 
       {/* Lista de Processos Agrupados com Timeline */}
-      <section className="space-y-6">
+      <section className="flex flex-col gap-6">
         {filteredProcesses.length === 0 ? (
           <div className="bg-surface-container-lowest p-12 rounded-xl border border-slate-100 text-center text-slate-500 space-y-3">
             <Scale className="w-12 h-12 mx-auto text-slate-300" />
@@ -546,7 +614,7 @@ export default function Movimentacoes() {
           </div>
         ) : (
           filteredProcesses.map(proc => (
-            <div key={proc.id} className="bg-surface-container-lowest rounded-xl border border-slate-200/80 shadow-xs p-6 space-y-6">
+            <div key={proc.id} className="bg-surface-container-lowest rounded-xl border border-slate-200/80 shadow-xs p-6 flex flex-col gap-6">
               {/* Header do Processo */}
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -575,12 +643,64 @@ export default function Movimentacoes() {
                 </div>
               </div>
 
+              {/* Barra de Validação de Movimentações Selecionadas */}
+              {activeTab === 'VALIDAR' ? (
+                (selectedMovements[proc.id] || []).length > 0 ? (
+                  <div className="flex items-center justify-between bg-emerald-50/50 border border-emerald-100/60 rounded-xl px-4 py-3 text-xs text-slate-700 font-sans animate-in fade-in duration-200">
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-emerald-800 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        {(selectedMovements[proc.id] || []).length} movimentação(ões) selecionada(s) para validação.
+                      </span>
+                      <button
+                        onClick={() => toggleSelectAllForProcess(proc.id, proc.movements)}
+                        className="text-slate-400 hover:text-slate-600 hover:underline font-bold cursor-pointer text-[10px] uppercase tracking-wider pl-3 border-l border-slate-200"
+                      >
+                        {(selectedMovements[proc.id] || []).length === proc.movements.length ? 'Desmarcar todas' : 'Selecionar todas'}
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => handleValidateSelected(proc.id)}
+                      className="py-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Check className="w-4 h-4 stroke-[2.5]" />
+                      <span>Validar Selecionadas</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between bg-slate-50/50 border border-slate-100/80 rounded-xl px-4 py-2.5 text-[11px] text-slate-500 font-sans">
+                    <span>Nenhuma movimentação selecionada neste processo.</span>
+                    <button
+                      onClick={() => toggleSelectAllForProcess(proc.id, proc.movements)}
+                      className="text-blue-600 hover:text-blue-700 hover:underline font-bold cursor-pointer uppercase tracking-wider text-[10px]"
+                    >
+                      Selecionar todas
+                    </button>
+                  </div>
+                )
+              ) : null}
+
               {/* Linha do Tempo de Movimentações */}
-              <div className="pl-6 space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+              <div className="pl-6 flex flex-col gap-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
                 {proc.movements.map(mov => (
                   <div key={mov.id} className="relative pl-6">
-                    {/* Node Dot */}
-                    <div className="absolute -left-3 top-4 w-3.5 h-3.5 rounded-full bg-slate-300 border-2 border-white ring-2 ring-slate-100" />
+                    {/* Node Dot ou Checkbox Circular */}
+                    {activeTab === 'VALIDAR' ? (
+                      <button
+                        onClick={() => toggleMovementSelection(proc.id, mov.id)}
+                        className={`absolute -left-[15px] top-[13px] w-5 h-5 rounded-full border transition-all flex items-center justify-center cursor-pointer z-10 ${
+                          (selectedMovements[proc.id] || []).includes(mov.id)
+                            ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm scale-110'
+                            : 'bg-white border-slate-300 hover:border-emerald-500 hover:scale-110'
+                        }`}
+                      >
+                        {(selectedMovements[proc.id] || []).includes(mov.id) ? (
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        ) : null}
+                      </button>
+                    ) : (
+                      <div className="absolute -left-3 top-4 w-3.5 h-3.5 rounded-full bg-slate-300 border-2 border-white ring-2 ring-slate-100" />
+                    )}
 
                     {/* Card do Andamento */}
                     <div className="bg-white border border-slate-200/70 rounded-xl p-5 shadow-2xs space-y-3 hover:border-slate-300 transition-all">

@@ -1,4 +1,4 @@
-export type MovementOrigin = 'MANUAL' | 'API_TRIBUNAL';
+export type MovementOrigin = 'MANUAL' | 'API_TRIBUNAL' | 'API_INFOSIMPLES' | 'API_DATAJUD';
 export type MovementStatus = 'PENDING' | 'VALIDATED';
 
 export interface MovementItem {
@@ -32,7 +32,36 @@ export function getStoredProcessGroups(): ProcessGroup[] {
       localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
       return [];
     }
-    return JSON.parse(data);
+    const groups: ProcessGroup[] = JSON.parse(data);
+
+    // Sanitizar IDs duplicados para evitar conflitos de seleção no frontend
+    let hasDuplicates = false;
+    const seenIds = new Set<string>();
+
+    const sanitizedGroups = groups.map((g) => {
+      const sanitizedMovements = g.movements.map((m) => {
+        if (!m.id || seenIds.has(m.id)) {
+          hasDuplicates = true;
+          const uniqueId = `mov-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+          seenIds.add(uniqueId);
+          return { ...m, id: uniqueId };
+        }
+        seenIds.add(m.id);
+        return m;
+      });
+      return { ...g, movements: sanitizedMovements };
+    });
+
+    if (hasDuplicates) {
+      // Salvar de volta de forma silenciosa sem disparar o evento de atualização global para evitar loops
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizedGroups));
+      } catch (err) {
+        console.error('Erro ao salvar movimentações sanitizadas:', err);
+      }
+    }
+
+    return sanitizedGroups;
   } catch (err) {
     console.error('Erro ao ler movimentações salvas:', err);
     return [];
@@ -100,7 +129,7 @@ export function addMovementToProcessGroup(
 ): MovementItem {
   const groups = getStoredProcessGroups();
   const newMov: MovementItem = {
-    id: `mov-${Date.now()}`,
+    id: `mov-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     processId,
     date,
     origin,

@@ -3,12 +3,25 @@ import { ProcessesService } from './processes.service';
 import { CreateProcessDto } from './dto/create-process.dto';
 import { UpdateProcessDto } from './dto/update-process.dto';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('Processes')
 @ApiBearerAuth()
 @Controller('processes')
 export class ProcessesController {
   constructor(private readonly processesService: ProcessesService) {}
+
+  @Public()
+  @Get('datajudi/:cnj')
+  consultDataJudi(@Param('cnj') cnj: string) {
+    return this.processesService.consultDataJudi(cnj);
+  }
+
+  @Public()
+  @Get('infosimples/:cnj')
+  consultInfosimples(@Param('cnj') cnj: string) {
+    return this.processesService.consultInfosimples(cnj);
+  }
 
   @Post()
   create(@Body() createProcessDto: CreateProcessDto, @Request() req) {
