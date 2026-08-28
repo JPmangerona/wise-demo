@@ -208,7 +208,6 @@ export class ProcessesService {
       }
     }
 
-    isProjudi = tribunalSigla.includes('projudi');
     const isTjsp = tribunalSigla.startsWith('tjsp');
     
     const url = isTjsp || tribunalSigla.includes('/')
