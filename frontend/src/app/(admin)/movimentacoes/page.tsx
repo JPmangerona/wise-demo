@@ -31,7 +31,6 @@ import {
   ProcessGroup,
   MovementItem,
   MovementOrigin,
-  MovementStatus,
   getStoredProcessGroups,
   addMovementToProcessGroup,
   MOVEMENT_UPDATE_EVENT,
@@ -64,12 +63,29 @@ const monthNames = [
   'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'
 ];
 
+const apiOrigins: MovementOrigin[] = ['API_TRIBUNAL', 'API_INFOSIMPLES', 'API_DATAJUD'];
+
+const originLabels: Record<MovementOrigin, string> = {
+  MANUAL: 'MANUAL',
+  API_TRIBUNAL: 'API TRIBUNAL',
+  API_INFOSIMPLES: 'INFOSIMPLES',
+  API_DATAJUD: 'DATAJUD',
+};
+
+const originBadgeClasses: Record<MovementOrigin, string> = {
+  MANUAL: 'bg-slate-100 text-slate-600',
+  API_TRIBUNAL: 'bg-purple-100 text-purple-700',
+  API_INFOSIMPLES: 'bg-blue-100 text-blue-700',
+  API_DATAJUD: 'bg-emerald-100 text-emerald-700',
+};
+
 export default function Movimentacoes() {
   const [activeTab, setActiveTab] = useState<'VALIDAR' | 'HISTORICO'>('VALIDAR');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOrigin, setFilterOrigin] = useState<string>('');
 
   const [processes, setProcesses] = useState<ProcessGroup[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedMovements, setSelectedMovements] = useState<Record<string, string[]>>({});
   const [collapsedProcesses, setCollapsedProcesses] = useState<Record<string, boolean>>({});
 
@@ -97,21 +113,27 @@ export default function Movimentacoes() {
       });
 
       setProcesses(enriched);
+      setLoadError(null);
     } catch (err) {
       console.error('Erro ao carregar movimentações:', err);
+      setProcesses([]);
+      setLoadError('Não foi possível carregar as movimentações. Verifique se a API está configurada corretamente.');
     }
   };
 
   // Carregar e sincronizar movimentações salvas
   useEffect(() => {
 
-    void loadMovements();
+    const timeoutId = window.setTimeout(() => {
+      void loadMovements();
+    }, 0);
 
     const handleUpdate = () => { void loadMovements(); };
     window.addEventListener(MOVEMENT_UPDATE_EVENT, handleUpdate);
     window.addEventListener('storage', handleUpdate);
 
     return () => {
+      window.clearTimeout(timeoutId);
       window.removeEventListener(MOVEMENT_UPDATE_EVENT, handleUpdate);
       window.removeEventListener('storage', handleUpdate);
     };
@@ -453,7 +475,7 @@ export default function Movimentacoes() {
   const currentMovementsList = activeTab === 'VALIDAR' ? pendingMovements : validatedMovements;
 
   const countPending = pendingMovements.length;
-  const countApi = currentMovementsList.filter(m => m.origin === 'API_TRIBUNAL').length;
+  const countApi = currentMovementsList.filter(m => apiOrigins.includes(m.origin)).length;
   const countManual = currentMovementsList.filter(m => m.origin === 'MANUAL').length;
 
   // Filtragem dos processos agrupados
@@ -480,8 +502,6 @@ export default function Movimentacoes() {
       movements: matchingMovements,
     };
   }).filter(proc => proc.movements.length > 0);
-
-  const visibleMovementsCount = filteredProcesses.reduce((acc, p) => acc + p.movements.length, 0);
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto relative">
@@ -566,6 +586,8 @@ export default function Movimentacoes() {
               <option value="">Todas as Origens</option>
               <option value="MANUAL">Manual</option>
               <option value="API_TRIBUNAL">API Tribunal</option>
+              <option value="API_INFOSIMPLES">Infosimples</option>
+              <option value="API_DATAJUD">DataJud</option>
             </select>
           </div>
         </div>
@@ -601,7 +623,12 @@ export default function Movimentacoes() {
 
       {/* Lista de Processos Agrupados com Timeline */}
       <section className="flex flex-col gap-6">
-        {filteredProcesses.length === 0 ? (
+        {loadError ? (
+          <div className="bg-red-50 p-6 rounded-xl border border-red-100 text-red-700 space-y-2">
+            <p className="font-semibold text-sm">Erro ao carregar dados.</p>
+            <p className="text-xs text-red-600">{loadError}</p>
+          </div>
+        ) : filteredProcesses.length === 0 ? (
           <div className="bg-surface-container-lowest p-12 rounded-xl border border-slate-100 text-center text-slate-500 space-y-3">
             <Scale className="w-12 h-12 mx-auto text-slate-300" />
             <p className="font-semibold text-slate-700 text-base">Nenhuma movimentação encontrada.</p>
@@ -729,13 +756,9 @@ export default function Movimentacoes() {
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-bold text-slate-500">{mov.date}</span>
                           <span
-                            className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full tracking-wider ${
-                              mov.origin === 'API_TRIBUNAL'
-                                ? 'bg-purple-100 text-purple-700'
-                                : 'bg-slate-100 text-slate-600'
-                            }`}
+                            className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full tracking-wider ${originBadgeClasses[mov.origin] || originBadgeClasses.MANUAL}`}
                           >
-                            {mov.origin === 'API_TRIBUNAL' ? 'API TRIBUNAL' : 'MANUAL'}
+                            {originLabels[mov.origin] || mov.origin}
                           </span>
                         </div>
 
@@ -1186,6 +1209,8 @@ export default function Movimentacoes() {
             >
               <option value="MANUAL">Manual</option>
               <option value="API_TRIBUNAL">API Tribunal</option>
+              <option value="API_INFOSIMPLES">Infosimples</option>
+              <option value="API_DATAJUD">DataJud</option>
             </select>
           </div>
 

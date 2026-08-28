@@ -187,20 +187,32 @@ export class ProcessesService {
       throw new BadRequestException('A Infosimples não suporta a consulta de processos da Justiça do Trabalho (TRT). Por favor, utilize o botão "Sincronizar via DataJud" para este processo.');
     }
 
-    let tribunalSigla = 'tjpr';
+    let tribunalSigla = 'tjpr/projudi';
+    let isProjudi = false;
+    
     if (j === 8) {
       const MAPA_TRIBUNAIS: Record<number, string> = {
-        19: 'tjrj',
+        19: 'tjrj/processo',
         26: numeroLimpo.endsWith('0000') ? 'tjsp/segundo-grau' : 'tjsp/primeiro-grau',
-        16: 'tjpr',
-        13: 'tjmg',
-        21: 'tjrs',
+        16: 'tjpr/projudi',
+        12: 'tjms/processo',
+        13: 'tjmg/processo',
+        21: 'tjrs/processo',
+        24: 'tjsc/processo',
       };
-      tribunalSigla = MAPA_TRIBUNAIS[tr] || 'tjpr';
+      
+      const sigla = MAPA_TRIBUNAIS[tr];
+      if (sigla) {
+        tribunalSigla = sigla;
+      } else {
+        tribunalSigla = `tj${String(tr).padStart(2, '0')}/processo`;
+      }
     }
 
+    isProjudi = tribunalSigla.includes('projudi');
     const isTjsp = tribunalSigla.startsWith('tjsp');
-    const url = isTjsp
+    
+    const url = isTjsp || tribunalSigla.includes('/')
       ? `https://api.infosimples.com/api/v2/consultas/tribunal/${tribunalSigla}`
       : `https://api.infosimples.com/api/v2/consultas/tribunal/${tribunalSigla}/processo`;
 

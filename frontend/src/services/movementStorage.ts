@@ -29,7 +29,7 @@ export async function getStoredProcessGroups(): Promise<ProcessGroup[]> {
     return res.data || [];
   } catch (err) {
     console.error('Erro ao buscar movimentações do banco:', err);
-    return [];
+    throw err;
   }
 }
 
