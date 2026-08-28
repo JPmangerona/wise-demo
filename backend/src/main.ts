@@ -6,17 +6,23 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '');
-  const allowedOrigins = [
-    frontendUrl,
+  const normalizeOrigin = (origin?: string) => origin?.replace(/\/$/, '');
+  const allowedOrigins = new Set([
+    ...((process.env.FRONTEND_URL || '').split(',').map(normalizeOrigin)),
+    'https://wise-estagio.up.railway.app',
     'http://localhost:3003',
     'http://localhost:3000',
-  ].filter(Boolean);
+  ].filter((origin): origin is string => Boolean(origin)));
 
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+      if (!origin) {
         callback(null, true);
+        return;
+      }
+
+      if (allowedOrigins.has(normalizeOrigin(origin) || '')) {
+        callback(null, origin);
         return;
       }
 
@@ -25,6 +31,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
+    optionsSuccessStatus: 204,
   });
 
   app.setGlobalPrefix('api/v1');

@@ -11,8 +11,10 @@ export class AuthService {
   ) {}
 
   async login(email: string, password: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+
     // 1. Busca o usuário pelo e-mail
-    const user = await this.usersRepository.findByEmail(email);
+    const user = await this.usersRepository.findByEmail(normalizedEmail);
     if (!user) {
       throw new UnauthorizedException('E-mail ou senha incorretos');
     }
