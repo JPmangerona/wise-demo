@@ -187,14 +187,13 @@ export class ProcessesService {
       throw new BadRequestException('A Infosimples não suporta a consulta de processos da Justiça do Trabalho (TRT). Por favor, utilize o botão "Sincronizar via DataJud" para este processo.');
     }
 
-    let tribunalSigla = 'tjpr/projudi';
-    let isProjudi = false;
+    let tribunalSigla = 'tjpr/processo';
     
     if (j === 8) {
       const MAPA_TRIBUNAIS: Record<number, string> = {
         19: 'tjrj/processo',
         26: numeroLimpo.endsWith('0000') ? 'tjsp/segundo-grau' : 'tjsp/primeiro-grau',
-        16: 'tjpr/projudi',
+        16: 'tjpr/processo',
         12: 'tjms/processo',
         13: 'tjmg/processo',
         21: 'tjrs/processo',
