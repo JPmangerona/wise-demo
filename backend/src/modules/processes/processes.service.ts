@@ -1,12 +1,19 @@
 import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateProcessDto } from './dto/create-process.dto';
 import { UpdateProcessDto } from './dto/update-process.dto';
 import { ProcessesRepository } from './processes.repository';
 import { ProcessStatus } from './entities/process.entity';
+import { ClientEntity } from '../clients/entities/client.entity';
 
 @Injectable()
 export class ProcessesService {
-  constructor(private readonly repository: ProcessesRepository) {}
+  constructor(
+    private readonly repository: ProcessesRepository,
+    @InjectRepository(ClientEntity)
+    private readonly clientRepository: Repository<ClientEntity>,
+  ) {}
 
   create(createProcessDto: CreateProcessDto, user: any) {
     if (createProcessDto.status && createProcessDto.status !== ProcessStatus.ATIVO) {
@@ -259,5 +266,63 @@ export class ProcessesService {
       if (error instanceof BadRequestException) throw error;
       throw new BadRequestException(`Falha de comunicação com a Infosimples: ${error.message}`);
     }
+  }
+
+  async getProcessGroups(user: any) {
+    const processes = await this.repository.findAll({ companyId: user.companyId });
+    const processIds = processes.map(p => p.id);
+    const movements = await this.repository.findMovementsByProcessIds(processIds);
+
+    // Buscar clientes para mapear nomes
+    const clients = await this.clientRepository.find({ where: { companyId: user.companyId } });
+    const clientMap = new Map(clients.map(c => [c.id, c.name]));
+
+    const movementsMap: Record<string, any[]> = {};
+    for (const m of movements) {
+      if (!movementsMap[m.processId]) {
+        movementsMap[m.processId] = [];
+      }
+      movementsMap[m.processId].push({
+        id: m.id,
+        processId: m.processId,
+        date: m.date,
+        origin: m.origin,
+        description: m.description,
+        status: m.status,
+      });
+    }
+
+    return processes.map(p => ({
+      id: p.id,
+      processName: p.title || p.cnj || 'Sem Título',
+      clientName: p.clientId ? (clientMap.get(p.clientId) || '-') : '-',
+      adverseParty: p.adverseParty || '-',
+      courtCity: `${p.tribunal || '-'} - ${p.vara || '-'}`,
+      movements: movementsMap[p.id] || [],
+    }));
+  }
+
+  async addMovement(processId: string, dto: any, user: any) {
+    return this.repository.createMovement({
+      processId,
+      date: dto.date,
+      origin: dto.origin,
+      description: dto.description,
+      status: dto.status || 'PENDING',
+    }, user.companyId);
+  }
+
+  async validateMovement(id: string, user: any) {
+    return this.repository.validateMovement(id);
+  }
+
+  async validateMovements(dto: { ids: string[] }, user: any) {
+    await this.repository.validateMovements(dto.ids);
+    return { success: true };
+  }
+
+  async removeMovement(id: string, user: any) {
+    await this.repository.removeMovement(id);
+    return { success: true };
   }
 }

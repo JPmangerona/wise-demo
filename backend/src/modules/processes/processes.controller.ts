@@ -33,9 +33,34 @@ export class ProcessesController {
     return this.processesService.findAll(req.user);
   }
 
+  @Get('groups')
+  getProcessGroups(@Request() req) {
+    return this.processesService.getProcessGroups(req.user);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     return this.processesService.findOne(id, req.user);
+  }
+
+  @Post('movements/validate-multiple')
+  validateMovements(@Body() dto: { ids: string[] }, @Request() req) {
+    return this.processesService.validateMovements(dto, req.user);
+  }
+
+  @Post('movements/:id/validate')
+  validateMovement(@Param('id') id: string, @Request() req) {
+    return this.processesService.validateMovement(id, req.user);
+  }
+
+  @Delete('movements/:id')
+  removeMovement(@Param('id') id: string, @Request() req) {
+    return this.processesService.removeMovement(id, req.user);
+  }
+
+  @Post(':id/movements')
+  addMovement(@Param('id') id: string, @Body() dto: any, @Request() req) {
+    return this.processesService.addMovement(id, dto, req.user);
   }
 
   @Put(':id')

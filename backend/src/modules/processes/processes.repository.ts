@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository, FindOptionsWhere, In } from 'typeorm';
 import { ProcessEntity } from './entities/process.entity';
 import { ProcessUserEntity } from './entities/process-user.entity';
+import { MovementEntity } from './entities/movement.entity';
 import { CreateProcessDto } from './dto/create-process.dto';
 import { UpdateProcessDto } from './dto/update-process.dto';
 
@@ -13,6 +14,8 @@ export class ProcessesRepository {
     private readonly repository: Repository<ProcessEntity>,
     @InjectRepository(ProcessUserEntity)
     private readonly processUserRepository: Repository<ProcessUserEntity>,
+    @InjectRepository(MovementEntity)
+    private readonly movementRepository: Repository<MovementEntity>,
   ) {}
 
   async findAll(where: FindOptionsWhere<ProcessEntity> | FindOptionsWhere<ProcessEntity>[]): Promise<ProcessEntity[]> {
@@ -94,7 +97,48 @@ export class ProcessesRepository {
 
   async remove(id: string): Promise<void> {
     const process = await this.findById(id);
+    // Remover movimentações do processo antes de removê-lo
+    await this.movementRepository.delete({ processId: id });
     // Os registros em process_users são removidos automaticamente (onDelete: CASCADE)
     await this.repository.remove(process);
+  }
+
+  async findMovementsByProcessIds(processIds: string[]): Promise<MovementEntity[]> {
+    if (processIds.length === 0) return [];
+    return this.movementRepository.find({
+      where: { processId: In(processIds) },
+      order: { date: 'DESC', createdAt: 'DESC' },
+    });
+  }
+
+  async createMovement(
+    dto: { processId: string; date: string; origin: string; description: string; status?: string },
+    companyId: string,
+  ): Promise<MovementEntity> {
+    const movement = this.movementRepository.create({
+      ...dto,
+      companyId,
+      status: (dto.status || 'PENDING') as any,
+      origin: (dto.origin || 'MANUAL').toUpperCase() as any,
+    });
+    return this.movementRepository.save(movement);
+  }
+
+  async validateMovement(id: string): Promise<MovementEntity> {
+    const movement = await this.movementRepository.findOne({ where: { id } });
+    if (!movement) throw new NotFoundException('Movimentação não encontrada');
+    movement.status = 'VALIDATED';
+    return this.movementRepository.save(movement);
+  }
+
+  async validateMovements(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    await this.movementRepository.update({ id: In(ids) }, { status: 'VALIDATED' });
+  }
+
+  async removeMovement(id: string): Promise<void> {
+    const movement = await this.movementRepository.findOne({ where: { id } });
+    if (!movement) throw new NotFoundException('Movimentação não encontrada');
+    await this.movementRepository.remove(movement);
   }
 }

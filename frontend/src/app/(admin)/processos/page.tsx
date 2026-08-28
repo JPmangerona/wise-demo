@@ -22,7 +22,6 @@ import { User, Client, Process, ProcessStatus, PROCESS_STATUS_LABELS } from '@/t
 import {
   getStoredProcessGroups,
   addMovementToProcessGroup,
-  updateProcessGroupInfo,
   MOVEMENT_UPDATE_EVENT,
   ProcessGroup,
 } from '@/services/movementStorage';
@@ -84,8 +83,8 @@ export default function ProcessosPage() {
 
   // Carregar movimentações armazenadas
   useEffect(() => {
-    const syncGroups = () => setStoredGroups(getStoredProcessGroups());
-    syncGroups();
+    const syncGroups = async () => setStoredGroups(await getStoredProcessGroups());
+    void syncGroups();
 
     window.addEventListener(MOVEMENT_UPDATE_EVENT, syncGroups);
     window.addEventListener('storage', syncGroups);
@@ -206,14 +205,7 @@ export default function ProcessosPage() {
         savedId = res.data?.id;
       }
 
-      if (savedId) {
-        updateProcessGroupInfo(savedId, {
-          processName: formData.title || formData.cnj || 'Sem Título',
-          clientName: getClientName(formData.clientId),
-          adverseParty: formData.adverseParty || '-',
-          courtCity: `${formData.tribunal || '-'} - ${formData.vara || '-'}`,
-        });
-      }
+
 
       setIsModalOpen(false);
       fetchData();
@@ -246,9 +238,9 @@ export default function ProcessosPage() {
   };
 
   // ---- Handlers do Modal de Movimentações ----
-  const openMovementsModal = (process: Process) => {
+  const openMovementsModal = async (process: Process) => {
     setSelectedProcessForMovements(process);
-    setStoredGroups(getStoredProcessGroups());
+    setStoredGroups(await getStoredProcessGroups());
 
     const now = new Date();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -262,7 +254,7 @@ export default function ProcessosPage() {
     setIsMovementsModalOpen(true);
   };
 
-  const handleAddMovement = () => {
+  const handleAddMovement = async () => {
     if (!selectedProcessForMovements || !newMovDescription.trim()) return;
 
     const process = selectedProcessForMovements;
@@ -271,18 +263,23 @@ export default function ProcessosPage() {
     const courtCity = `${process.tribunal || '-'} - ${process.vara || '-'}`;
     const processName = process.title || process.cnj || 'Sem Título';
 
-    addMovementToProcessGroup(
-      process.id,
-      processName,
-      clientName,
-      adverseParty,
-      courtCity,
-      newMovDate || '25/08/2026, 10:35',
-      (newMovOrigin || 'MANUAL').toUpperCase() as any,
-      newMovDescription.trim()
-    );
+    try {
+      await addMovementToProcessGroup(
+        process.id,
+        processName,
+        clientName,
+        adverseParty,
+        courtCity,
+        newMovDate || '25/08/2026, 10:35',
+        (newMovOrigin || 'MANUAL').toUpperCase() as any,
+        newMovDescription.trim()
+      );
 
-    setNewMovDescription('');
+      setNewMovDescription('');
+      setStoredGroups(await getStoredProcessGroups());
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const formatMovementDate = (dateStr: string): string => {
@@ -335,7 +332,7 @@ export default function ProcessosPage() {
       const courtCity = `${process.tribunal || '-'} - ${process.vara || '-'}`;
       const processName = process.title || process.cnj || 'Sem Título';
 
-      const groups = getStoredProcessGroups();
+      const groups = await getStoredProcessGroups();
       const group = groups.find(g => g.id === process.id);
       const existing = group?.movements || [];
 
@@ -352,7 +349,7 @@ export default function ProcessosPage() {
         );
 
         if (!isDuplicate) {
-          addMovementToProcessGroup(
+          await addMovementToProcessGroup(
             process.id,
             processName,
             clientName,
@@ -366,6 +363,7 @@ export default function ProcessosPage() {
         }
       }
 
+      setStoredGroups(await getStoredProcessGroups());
       setSyncStatus(`Sucesso! ${importedCount} novas movimentações importadas.`);
       setTimeout(() => setSyncStatus(null), 4000);
     } catch (err: any) {
@@ -398,7 +396,7 @@ export default function ProcessosPage() {
       const courtCity = `${process.tribunal || '-'} - ${process.vara || '-'}`;
       const processName = process.title || process.cnj || 'Sem Título';
 
-      const groups = getStoredProcessGroups();
+      const groups = await getStoredProcessGroups();
       const group = groups.find(g => g.id === process.id);
       const existing = group?.movements || [];
 
@@ -415,7 +413,7 @@ export default function ProcessosPage() {
         );
 
         if (!isDuplicate) {
-          addMovementToProcessGroup(
+          await addMovementToProcessGroup(
             process.id,
             processName,
             clientName,
@@ -429,6 +427,7 @@ export default function ProcessosPage() {
         }
       }
 
+      setStoredGroups(await getStoredProcessGroups());
       setSyncStatus(`Sucesso! ${importedCount} novas movimentações importadas.`);
       setTimeout(() => setSyncStatus(null), 4000);
     } catch (err: any) {

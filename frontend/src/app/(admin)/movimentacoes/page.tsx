@@ -33,7 +33,6 @@ import {
   MovementOrigin,
   MovementStatus,
   getStoredProcessGroups,
-  saveStoredProcessGroups,
   addMovementToProcessGroup,
   MOVEMENT_UPDATE_EVENT,
 } from '@/services/movementStorage';
@@ -74,36 +73,37 @@ export default function Movimentacoes() {
   const [selectedMovements, setSelectedMovements] = useState<Record<string, string[]>>({});
   const [collapsedProcesses, setCollapsedProcesses] = useState<Record<string, boolean>>({});
 
+  const loadMovements = async () => {
+    try {
+      const [stored, procRes, clientRes] = await Promise.all([
+        getStoredProcessGroups(),
+        api.get('/processes'),
+        api.get('/clients'),
+      ]);
+      const backendProcesses: Process[] = procRes.data || [];
+      const clients: Client[] = clientRes.data || [];
+
+      const enriched = stored.map((group) => {
+        const bp = backendProcesses.find((p) => p.id === group.id);
+        if (!bp) return group;
+        const clientObj = clients.find((c) => c.id === bp.clientId);
+        return {
+          ...group,
+          processName: bp.title || bp.cnj || group.processName,
+          clientName: clientObj?.name || (bp.clientId ? group.clientName : '-'),
+          adverseParty: bp.adverseParty || group.adverseParty || '-',
+          courtCity: `${bp.tribunal || '-'} - ${bp.vara || '-'}`,
+        };
+      });
+
+      setProcesses(enriched);
+    } catch (err) {
+      console.error('Erro ao carregar movimentações:', err);
+    }
+  };
+
   // Carregar e sincronizar movimentações salvas
   useEffect(() => {
-    const loadMovements = async () => {
-      const stored = getStoredProcessGroups();
-      try {
-        const [procRes, clientRes] = await Promise.all([
-          api.get('/processes'),
-          api.get('/clients'),
-        ]);
-        const backendProcesses: Process[] = procRes.data || [];
-        const clients: Client[] = clientRes.data || [];
-
-        const enriched = stored.map((group) => {
-          const bp = backendProcesses.find((p) => p.id === group.id);
-          if (!bp) return group;
-          const clientObj = clients.find((c) => c.id === bp.clientId);
-          return {
-            ...group,
-            processName: bp.title || bp.cnj || group.processName,
-            clientName: clientObj?.name || (bp.clientId ? group.clientName : '-'),
-            adverseParty: bp.adverseParty || group.adverseParty || '-',
-            courtCity: `${bp.tribunal || '-'} - ${bp.vara || '-'}`,
-          };
-        });
-
-        setProcesses(enriched);
-      } catch (err) {
-        setProcesses(stored);
-      }
-    };
 
     void loadMovements();
 
@@ -167,25 +167,19 @@ export default function Movimentacoes() {
   };
 
   // Handler: Validar movimentação pura
-  const handleValidate = (processId: string, movementId: string) => {
-    const updated = processes.map(p => {
-      if (p.id !== processId) return p;
-      return {
-        ...p,
-        movements: p.movements.map(m =>
-          m.id === movementId ? { ...m, status: 'VALIDATED' as MovementStatus } : m
-        ),
-      };
-    });
-
-    setProcesses(updated);
-    saveStoredProcessGroups(updated);
+  const handleValidate = async (processId: string, movementId: string) => {
+    try {
+      await api.post(`/processes/movements/${movementId}/validate`);
+      void loadMovements();
+    } catch (err) {
+      console.error('Erro ao validar movimentação:', err);
+    }
   };
 
   // Opção 1: Apenas Validar
-  const handleJustValidate = () => {
+  const handleJustValidate = async () => {
     if (validateTarget) {
-      handleValidate(validateTarget.proc.id, validateTarget.mov.id);
+      await handleValidate(validateTarget.proc.id, validateTarget.mov.id);
       showFeedback('Movimentação validada e enviada para o Histórico!');
     }
     setIsValidateModalOpen(false);
@@ -219,28 +213,25 @@ export default function Movimentacoes() {
   };
 
   // Handler: Confirmar Exclusão
-  const handleExecuteDelete = () => {
+  const handleExecuteDelete = async () => {
     if (targetToDelete) {
-      const updated = processes.map(p => {
-        if (p.id !== targetToDelete.processId) return p;
-        return {
-          ...p,
-          movements: p.movements.filter(m => m.id !== targetToDelete.movementId),
-        };
-      });
-      setProcesses(updated);
-      saveStoredProcessGroups(updated);
+      try {
+        await api.delete(`/processes/movements/${targetToDelete.movementId}`);
 
-      // Limpar da seleção se for a movimentação excluída
-      setSelectedMovements(prev => {
-        const current = prev[targetToDelete.processId] || [];
-        return {
-          ...prev,
-          [targetToDelete.processId]: current.filter(id => id !== targetToDelete.movementId)
-        };
-      });
+        // Limpar da seleção se for a movimentação excluída
+        setSelectedMovements(prev => {
+          const current = prev[targetToDelete.processId] || [];
+          return {
+            ...prev,
+            [targetToDelete.processId]: current.filter(id => id !== targetToDelete.movementId)
+          };
+        });
 
-      showFeedback('Movimentação removida com sucesso!');
+        showFeedback('Movimentação removida com sucesso!');
+        void loadMovements();
+      } catch (err) {
+        console.error('Erro ao excluir movimentação:', err);
+      }
     }
     setIsDeleteModalOpen(false);
     setTargetToDelete(null);
@@ -344,7 +335,7 @@ export default function Movimentacoes() {
   };
 
   // Handler: Salvar Nova Movimentação Manual via modal próprio
-  const handleSaveNewMovement = () => {
+  const handleSaveNewMovement = async () => {
     if (!newDescription.trim()) return;
 
     const now = new Date();
@@ -352,20 +343,25 @@ export default function Movimentacoes() {
 
     const targetProc = processes.find(p => p.id === selectedProcessId);
 
-    addMovementToProcessGroup(
-      selectedProcessId,
-      targetProc?.processName || 'Sem Título',
-      targetProc?.clientName || '-',
-      targetProc?.adverseParty || '-',
-      targetProc?.courtCity || '-',
-      formattedDate,
-      newOrigin,
-      newDescription.trim()
-    );
+    try {
+      await addMovementToProcessGroup(
+        selectedProcessId,
+        targetProc?.processName || 'Sem Título',
+        targetProc?.clientName || '-',
+        targetProc?.adverseParty || '-',
+        targetProc?.courtCity || '-',
+        formattedDate,
+        newOrigin,
+        newDescription.trim()
+      );
 
-    setNewDescription('');
-    setIsNewModalOpen(false);
-    showFeedback('Nova movimentação cadastrada com sucesso!');
+      setNewDescription('');
+      setIsNewModalOpen(false);
+      showFeedback('Nova movimentação cadastrada com sucesso!');
+      void loadMovements();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Handler: Alternar colapso/visibilidade das movimentações de um processo
@@ -406,29 +402,23 @@ export default function Movimentacoes() {
   };
 
   // Handler: Validar movimentações selecionadas de um processo específico
-  const handleValidateSelected = (procId: string) => {
+  const handleValidateSelected = async (procId: string) => {
     const selectedIds = selectedMovements[procId] || [];
     if (selectedIds.length === 0) return;
 
-    const updated = processes.map(p => {
-      if (p.id !== procId) return p;
-      return {
-        ...p,
-        movements: p.movements.map(m =>
-          selectedIds.includes(m.id) ? { ...m, status: 'VALIDATED' as MovementStatus } : m
-        ),
-      };
-    });
+    try {
+      await api.post('/processes/movements/validate-multiple', { ids: selectedIds });
 
-    setProcesses(updated);
-    saveStoredProcessGroups(updated);
+      setSelectedMovements(prev => ({
+        ...prev,
+        [procId]: []
+      }));
 
-    setSelectedMovements(prev => ({
-      ...prev,
-      [procId]: []
-    }));
-
-    showFeedback(`${selectedIds.length} movimentações validadas e enviadas para o Histórico!`);
+      showFeedback(`${selectedIds.length} movimentações validadas com sucesso!`);
+      void loadMovements();
+    } catch (err) {
+      console.error('Erro ao validar movimentações selecionadas:', err);
+    }
   };
 
   // Lógica do Calendário no Modal de Agenda (img3)
