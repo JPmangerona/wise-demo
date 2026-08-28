@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Scale,
   Search,
@@ -79,6 +80,22 @@ const originBadgeClasses: Record<MovementOrigin, string> = {
   API_DATAJUD: 'bg-emerald-100 text-emerald-700',
 };
 
+const getLoadErrorMessage = (err: unknown) => {
+  if (axios.isAxiosError(err)) {
+    const status = err.response?.status;
+    const url = err.config?.url || 'endpoint desconhecido';
+    const apiMessage = err.response?.data?.message;
+
+    if (status) {
+      return `Falha em ${url}: ${status}${apiMessage ? ` - ${apiMessage}` : ''}`;
+    }
+
+    return `Falha em ${url}: ${err.message}`;
+  }
+
+  return 'Não foi possível carregar as movimentações. Verifique se a API está configurada corretamente.';
+};
+
 export default function Movimentacoes() {
   const [activeTab, setActiveTab] = useState<'VALIDAR' | 'HISTORICO'>('VALIDAR');
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,7 +134,7 @@ export default function Movimentacoes() {
     } catch (err) {
       console.error('Erro ao carregar movimentações:', err);
       setProcesses([]);
-      setLoadError('Não foi possível carregar as movimentações. Verifique se a API está configurada corretamente.');
+      setLoadError(getLoadErrorMessage(err));
     }
   };
 
