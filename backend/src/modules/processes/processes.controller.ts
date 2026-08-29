@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, Request, Query, BadRequestException } from '@nestjs/common';
 import { ProcessesService } from './processes.service';
 import { CreateProcessDto } from './dto/create-process.dto';
 import { UpdateProcessDto } from './dto/update-process.dto';
@@ -12,14 +12,16 @@ export class ProcessesController {
   constructor(private readonly processesService: ProcessesService) {}
 
   @Public()
-  @Get('datajudi/:cnj')
-  consultDataJudi(@Param('cnj') cnj: string) {
+  @Get('datajudi')
+  consultDataJudi(@Query('cnj') cnj: string) {
+    if (!cnj) throw new BadRequestException('O parâmetro "cnj" é obrigatório.');
     return this.processesService.consultDataJudi(cnj);
   }
 
   @Public()
-  @Get('infosimples/:cnj')
-  consultInfosimples(@Param('cnj') cnj: string) {
+  @Get('infosimples')
+  consultInfosimples(@Query('cnj') cnj: string) {
+    if (!cnj) throw new BadRequestException('O parâmetro "cnj" é obrigatório.');
     return this.processesService.consultInfosimples(cnj);
   }
 

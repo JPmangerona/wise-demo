@@ -318,7 +318,7 @@ export default function ProcessosPage() {
     setSyncingInfosimples(true);
     setSyncStatus('Consultando Infosimples...');
     try {
-      const res = await api.get(`/processes/infosimples/${process.cnj}`);
+      const res = await api.get(`/processes/infosimples`, { params: { cnj: process.cnj } });
       const movimentacoes = res.data?.movimentacoes || [];
 
       if (movimentacoes.length === 0) {
@@ -382,7 +382,7 @@ export default function ProcessosPage() {
     setSyncingDatajud(true);
     setSyncStatus('Consultando DataJud...');
     try {
-      const res = await api.get(`/processes/datajudi/${process.cnj}`);
+      const res = await api.get(`/processes/datajudi`, { params: { cnj: process.cnj } });
       const movimentacoes = res.data?.movimentacoes || [];
 
       if (movimentacoes.length === 0) {
