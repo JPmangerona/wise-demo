@@ -15,8 +15,7 @@ import {
   FileText,
   Contact,
   Scale,
-  ArrowBigUpDash,
-  ArrowBigDownDash,
+  DollarSign,
   ChartNoAxesCombined
 } from 'lucide-react';
 
@@ -36,8 +35,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     // { href: '/usuarios', label: 'Usuários', icon: Contact, category: 'Contatos' },
     { href: '/clientes', label: 'Clientes', icon: Users, category: 'Contatos' },
     // { href: '/relatorios', label: 'Relatórios', icon: ChartNoAxesCombined, category: 'Financeiro' },
-    { href: '/receita', label: 'Receita', icon: ArrowBigUpDash, category: 'Financeiro' },
-    { href: '/despesa', label: 'Despesa', icon: ArrowBigDownDash, category: 'Financeiro' },
+    { href: '/financeiro', label: 'Financeiro', icon: DollarSign, category: 'Financeiro' },
   ];
 
   return (

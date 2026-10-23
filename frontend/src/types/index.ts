@@ -68,11 +68,17 @@ export interface AgendaEvent {
   updatedAt: string;
 }
 
-// ---- RECEITAS (Revenues) ----
-export type RevenuePaymentMethod = 'PIX' | 'BOLETO' | 'TRANSFER' | 'CREDIT_CARD' | 'CASH';
-export type RevenueStatus = 'PENDING' | 'PAID' | 'CANCELED';
+// ---- FINANCEIRO (Financial) ----
+export type FinancialType = 'REVENUE' | 'EXPENSE';
+export type FinancialPaymentMethod = 'PIX' | 'BOLETO' | 'TRANSFER' | 'CREDIT_CARD' | 'CASH';
+export type FinancialStatus = 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELED';
 
-export const REVENUE_METHOD_LABELS: Record<RevenuePaymentMethod, string> = {
+export const FINANCIAL_TYPE_LABELS: Record<FinancialType, string> = {
+  REVENUE: 'Receita',
+  EXPENSE: 'Despesa',
+};
+
+export const FINANCIAL_METHOD_LABELS: Record<FinancialPaymentMethod, string> = {
   PIX: 'PIX',
   BOLETO: 'Boleto Bancário',
   TRANSFER: 'Transferência',
@@ -80,57 +86,40 @@ export const REVENUE_METHOD_LABELS: Record<RevenuePaymentMethod, string> = {
   CASH: 'Dinheiro',
 };
 
-export const REVENUE_STATUS_LABELS: Record<RevenueStatus, string> = {
-  PENDING: 'Pendente',
-  PAID: 'Pago',
-  CANCELED: 'Cancelado',
-};
-
-export interface Revenue {
-  id: string;
-  clientName: string;
-  clientId?: string;
-  description: string;
-  amount: number;
-  date: string; // YYYY-MM-DD
-  paymentMethod: RevenuePaymentMethod;
-  status: RevenueStatus;
-  companyId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// ---- DESPESAS (Expenses) ----
-export type ExpensePaymentMethod = 'PIX' | 'BOLETO' | 'TRANSFER' | 'CREDIT_CARD' | 'CASH';
-export type ExpenseStatus = 'PENDING' | 'PAID' | 'OVERDUE';
-
-export const EXPENSE_METHOD_LABELS: Record<ExpensePaymentMethod, string> = {
-  PIX: 'PIX',
-  BOLETO: 'Boleto Bancário',
-  TRANSFER: 'Transferência',
-  CREDIT_CARD: 'Cartão de Crédito',
-  CASH: 'Dinheiro',
-};
-
-export const EXPENSE_STATUS_LABELS: Record<ExpenseStatus, string> = {
+export const FINANCIAL_STATUS_LABELS: Record<FinancialStatus, string> = {
   PENDING: 'Pendente',
   PAID: 'Pago',
   OVERDUE: 'Atrasado',
+  CANCELED: 'Cancelado',
 };
 
-export interface Expense {
+export interface FinancialRecord {
   id: string;
-  supplierName: string;
-  supplierId?: string;
+  type: FinancialType;
+  personName: string;
+  personId?: string;
   description: string;
   amount: number;
   date: string; // YYYY-MM-DD
-  paymentMethod: ExpensePaymentMethod;
-  status: ExpenseStatus;
+  paymentMethod: FinancialPaymentMethod;
+  status: FinancialStatus;
   companyId: string;
   createdAt: string;
   updatedAt: string;
 }
+
+// Aliases mantidos para compatibilidade se necessário
+export type RevenuePaymentMethod = FinancialPaymentMethod;
+export type RevenueStatus = FinancialStatus;
+export const REVENUE_METHOD_LABELS = FINANCIAL_METHOD_LABELS;
+export const REVENUE_STATUS_LABELS = FINANCIAL_STATUS_LABELS;
+export type Revenue = FinancialRecord;
+
+export type ExpensePaymentMethod = FinancialPaymentMethod;
+export type ExpenseStatus = FinancialStatus;
+export const EXPENSE_METHOD_LABELS = FINANCIAL_METHOD_LABELS;
+export const EXPENSE_STATUS_LABELS = FINANCIAL_STATUS_LABELS;
+export type Expense = FinancialRecord;
 
 // ---- CONTATOS / CLIENTES (Clients) ----
 export interface Client {

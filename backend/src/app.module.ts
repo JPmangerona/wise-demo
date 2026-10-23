@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
@@ -7,12 +7,12 @@ import { UsersModule } from './modules/users/users.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { AgendaModule } from './modules/agenda/agenda.module';
-import { RevenuesModule } from './modules/revenues/revenues.module';
-import { ExpensesModule } from './modules/expenses/expenses.module';
+import { FinancialModule } from './modules/financial/financial.module';
 import { ProcessesModule } from './modules/processes/processes.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { LoggerMiddleware } from './middleware/logger.middleware';
 
 @Module({
   imports: [
@@ -26,8 +26,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     ClientsModule,
     TasksModule,
     AgendaModule,
-    RevenuesModule,
-    ExpensesModule,
+    FinancialModule,
     ProcessesModule,
     CompaniesModule,
     AuthModule,
@@ -41,4 +40,8 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     },
   ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}

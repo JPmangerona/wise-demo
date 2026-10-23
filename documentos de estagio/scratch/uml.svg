@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="300" viewBox="0 0 500 300">
+  <rect x="10" y="10" width="480" height="280" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <!-- Tab tag 'uc' -->
+  <polygon points="10,10 65,10 65,32 55,38 10,38" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <text x="22" y="30" font-family="Arial, sans-serif" font-size="14" font-weight="bold">uc</text>
+
+  <!-- Actor Stick Figure -->
+  <circle cx="110" cy="115" r="16" fill="none" stroke="#000000" stroke-width="2.5"/>
+  <line x1="110" y1="131" x2="110" y2="185" stroke="#000000" stroke-width="2.5"/>
+  <line x1="75" y1="150" x2="145" y2="150" stroke="#000000" stroke-width="2.5"/>
+  <line x1="110" y1="185" x2="85" y2="235" stroke="#000000" stroke-width="2.5"/>
+  <line x1="110" y1="185" x2="135" y2="235" stroke="#000000" stroke-width="2.5"/>
+  <text x="110" y="260" font-family="Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Actor</text>
+
+  <!-- Association Line -->
+  <line x1="145" y1="155" x2="275" y2="155" stroke="#000000" stroke-width="1.5"/>
+
+  <!-- Use Case Ellipse -->
+  <ellipse cx="365" cy="155" rx="85" ry="32" fill="#ffffcc" stroke="#000000" stroke-width="2"/>
+  <text x="365" y="151" font-family="Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Gerenciar_</text>
+  <text x="365" y="167" font-family="Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Agenda</text>
+</svg>

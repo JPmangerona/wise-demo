@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm 2cm 1.5cm 2cm;
+  }
+  body {
+    font-family: 'Liberation Sans', 'Arial', sans-serif;
+    font-size: 11pt;
+    color: #000;
+    line-height: 1.35;
+    margin: 0;
+    padding: 0;
+  }
+  .page {
+    page-break-after: always;
+    height: 980px;
+    box-sizing: border-box;
+    position: relative;
+  }
+  .page:last-child {
+    page-break-after: avoid;
+  }
+
+  /* Cover page */
+  .cover-top-line {
+    border-top: 1.5pt solid #000;
+    margin-top: 20px;
+    margin-bottom: 12px;
+  }
+  .cover-org {
+    text-align: right;
+    font-weight: bold;
+    font-size: 15pt;
+    line-height: 1.3;
+  }
+  .cover-mid-line {
+    border-bottom: 1.5pt solid #000;
+    margin-top: 12px;
+    margin-bottom: 140px;
+  }
+  .cover-body {
+    text-align: right;
+    margin-right: 0;
+  }
+  .cover-title {
+    font-size: 16pt;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  .cover-subtitle {
+    font-size: 15pt;
+    font-weight: bold;
+    margin-bottom: 35px;
+  }
+  .cover-version {
+    font-size: 12pt;
+    font-weight: bold;
+  }
+
+  /* Header Table */
+  .header-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 25px;
+  }
+  .header-table td {
+    border: 1px solid #000;
+    padding: 4px 8px;
+    font-size: 10pt;
+    vertical-align: top;
+  }
+  .header-left {
+    width: 70%;
+  }
+  .header-right {
+    width: 30%;
+  }
+
+  /* Section Titles */
+  h1.section-header {
+    font-size: 18pt;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 18px;
+  }
+
+  .doc-main-title {
+    font-size: 17pt;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 22px;
+  }
+
+  /* Revision Table */
+  .revision-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  .revision-table th, .revision-table td {
+    border: 1px solid #000;
+    padding: 5px 8px;
+    text-align: left;
+    font-size: 10pt;
+  }
+  .revision-table th {
+    font-weight: bold;
+  }
+  .revision-table tr {
+    height: 24px;
+  }
+
+  /* TOC */
+  .toc-item {
+    margin-bottom: 6px;
+    font-size: 11pt;
+  }
+  .toc-level-1 {
+    font-weight: normal;
+  }
+  .toc-level-2 {
+    margin-left: 28px;
+  }
+
+  /* Spec text */
+  .spec-h1 {
+    font-weight: bold;
+    font-size: 12pt;
+    margin-top: 14px;
+    margin-bottom: 4px;
+  }
+  .spec-h2 {
+    font-weight: bold;
+    font-size: 11pt;
+    margin-top: 12px;
+    margin-bottom: 4px;
+    margin-left: 18px;
+  }
+  .spec-h3 {
+    font-weight: bold;
+    font-size: 11pt;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    margin-left: 36px;
+  }
+  .spec-p {
+    margin-top: 3px;
+    margin-bottom: 6px;
+    margin-left: 18px;
+  }
+  .spec-step {
+    margin-top: 2px;
+    margin-bottom: 2px;
+    margin-left: 36px;
+  }
+  .spec-substep {
+    margin-top: 2px;
+    margin-bottom: 2px;
+    margin-left: 54px;
+  }
+
+  /* Table format for TOC */
+  .toc-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .toc-table td {
+    padding: 3px 0;
+    font-size: 11pt;
+  }
+  .toc-num {
+    text-align: right;
+    width: 30px;
+  }
+
+  /* UML Diagram box */
+  .uml-container {
+    margin-top: 15px;
+  }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: COVER -->
+<div class="page">
+  <div class="cover-top-line"></div>
+  <div class="cover-org">
+    JESSICA LIMA SOCIEDADE INDIVIDUAL DE<br>ADVOCACIA
+  </div>
+  <div class="cover-mid-line"></div>
+
+  <div class="cover-body">
+    <div class="cover-title">Wise - Software Jurídico</div>
+    <div class="cover-subtitle">Especificação de Caso de Uso</div>
+    <div class="cover-version">Versão 1.0</div>
+  </div>
+</div>
+
+<!-- PAGE 2: REVISION HISTORY -->
+<div class="page">
+  <table class="header-table">
+    <tr>
+      <td class="header-left">Wise<br>especificação_Gerenciar_Clientes.doc</td>
+      <td class="header-right">Versão: 1.0<br>Data: 05/09/2026</td>
+    </tr>
+  </table>
+
+  <h1 class="section-header">Histórico da Revisão</h1>
+
+  <table class="revision-table">
+    <thead>
+      <tr>
+        <th style="width: 20%;">Data</th>
+        <th style="width: 15%;">Versão</th>
+        <th style="width: 35%;">Descrição</th>
+        <th style="width: 30%;">Autor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>05/09/2026</td>
+        <td>1.0</td>
+        <td>Preenchimento Inicial do módulo de Clientes (Pessoa Física e Pessoa Jurídica)</td>
+        <td>João Pedro da Silva Mangerona</td>
+      </tr>
+      <tr>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+      </tr>
+      <tr>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGE 3: INDEX -->
+<div class="page">
+  <table class="header-table">
+    <tr>
+      <td class="header-left">Wise<br>especificação_Gerenciar_Clientes.doc</td>
+      <td class="header-right">Versão: 1.0<br>Data: 05/09/2026</td>
+    </tr>
+  </table>
+
+  <h1 class="section-header">Índice</h1>
+
+  <table class="toc-table">
+    <tr>
+      <td><strong>1. Breve Descrição</strong></td>
+      <td class="toc-num"><strong>4</strong></td>
+    </tr>
+    <tr>
+      <td><strong>2. Fluxo Básico de Eventos</strong></td>
+      <td class="toc-num"><strong>4</strong></td>
+    </tr>
+    <tr>
+      <td style="padding-left: 25px;">2.1. Visualizar Clientes</td>
+      <td class="toc-num">4</td>
+    </tr>
+    <tr>
+      <td style="padding-left: 25px;">2.2. Adicionar Cliente</td>
+      <td class="toc-num">4</td>
+    </tr>
+    <tr>
+      <td style="padding-left: 25px;">2.3. Editar Cliente</td>
+      <td class="toc-num">4</td>
+    </tr>
+    <tr>
+      <td style="padding-left: 25px;">2.4. Excluir Cliente</td>
+      <td class="toc-num">5</td>
+    </tr>
+    <tr>
+      <td><strong>3. Fluxos Alternativos</strong></td>
+      <td class="toc-num"><strong>5</strong></td>
+    </tr>
+    <tr>
+      <td><strong>4. Subfluxos</strong></td>
+      <td class="toc-num"><strong>5</strong></td>
+    </tr>
+    <tr>
+      <td><strong>5. Cenários Chave</strong></td>
+      <td class="toc-num"><strong>5</strong></td>
+    </tr>
+    <tr>
+      <td><strong>6. Condições Prévias</strong></td>
+      <td class="toc-num"><strong>5</strong></td>
+    </tr>
+    <tr>
+      <td><strong>7. Pontos de Extensão</strong></td>
+      <td class="toc-num"><strong>5</strong></td>
+    </tr>
+    <tr>
+      <td><strong>8. Requisitos Especiais</strong></td>
+      <td class="toc-num"><strong>5</strong></td>
+    </tr>
+    <tr>
+      <td><strong>9. Informações Adicionais</strong></td>
+      <td class="toc-num"><strong>6</strong></td>
+    </tr>
+  </table>
+</div>
+
+<!-- PAGE 4: SPECIFICATION PART 1 -->
+<div class="page">
+  <table class="header-table">
+    <tr>
+      <td class="header-left">Wise<br>especificação_Gerenciar_Clientes.doc</td>
+      <td class="header-right">Versão: 1.0<br>Data: 05/09/2026</td>
+    </tr>
+  </table>
+
+  <div class="doc-main-title">Especificação de Caso de Uso: Gerenciar Clientes</div>
+
+  <div class="spec-h1">1. &nbsp; Breve Descrição</div>
+  <div class="spec-p">Este caso de uso permite que o Ator organize, crie, edite, acompanhe e exclua os registros de clientes do escritório (Pessoas Físicas e Pessoas Jurídicas) no módulo de Clientes.</div>
+
+  <div class="spec-h1" style="margin-top: 16px;">2. &nbsp; Fluxo Básico de Eventos</div>
+  <div class="spec-p">O caso de uso segue o padrão de visualizar a listagem com cartões de métricas, adicionar, editar e excluir clientes no módulo de Clientes.</div>
+
+  <div class="spec-h2">2.1. &nbsp; Visualizar Clientes</div>
+  <div class="spec-step">2.1.1. &nbsp; O Ator acessa o módulo de "Clientes" através do menu principal.</div>
+  <div class="spec-step">2.1.2. &nbsp; O frontend envia requisições ao backend para recuperar a listagem de clientes (com Nome/Razão Social, E-mail, Telefone, CPF/CNPJ, Tipo) e métricas (Total de Clientes, Pessoas Físicas e Empresas PJ).</div>
+  <div class="spec-step">2.1.3. &nbsp; O sistema consulta os registros no Banco de Dados.</div>
+  <div class="spec-step">2.1.4. &nbsp; O sistema exibe os clientes em uma tabela organizada com filtro por tipo de pessoa (Física/Jurídica) e campo de busca global por texto.</div>
+  <div class="spec-step">2.1.5. &nbsp; O Ator visualiza as estatísticas e as informações detalhadas dos clientes.</div>
+
+  <div class="spec-h2" style="margin-top: 14px;">2.2. &nbsp; Adicionar Cliente</div>
+  <div class="spec-step">2.2.1. &nbsp; O Ator clica no botão "Novo Cliente".</div>
+  <div class="spec-step">2.2.2. &nbsp; O sistema exibe um formulário solicitando os dados do cliente: Nome/Razão Social, E-mail, Telefone, Tipo (Pessoa Física ou Jurídica), CPF/CNPJ, Data de Nascimento, CEP, Endereço, Número, Complemento, Bairro, Cidade e Estado.</div>
+  <div class="spec-step">2.2.3. &nbsp; O Ator preenche os dados solicitados.</div>
+  <div class="spec-step">2.2.4. &nbsp; O Ator aciona o comando "Salvar".</div>
+  <div class="spec-step">2.2.5. &nbsp; O sistema valida os campos obrigatórios (Nome/Razão Social).</div>
+  <div class="spec-step">2.2.6. &nbsp; O sistema persiste o novo cliente no banco de dados e atualiza a listagem.</div>
+
+  <div class="spec-h2" style="margin-top: 14px;">2.3. &nbsp; Editar Cliente</div>
+  <div class="spec-step">2.3.1. &nbsp; O Ator seleciona a opção "Editar" no cliente desejado.</div>
+  <div class="spec-step">2.3.2. &nbsp; O sistema carrega as informações atuais do cliente no formulário.</div>
+  <div class="spec-step">2.3.3. &nbsp; O Ator realiza as alterações necessárias (ex: atualização de contato ou endereço).</div>
+  <div class="spec-step">2.3.4. &nbsp; O Ator confirma a atualização clicando em "Salvar".</div>
+  <div class="spec-step">2.3.5. &nbsp; O sistema valida as informações e sobrescreve o registro no banco de dados.</div>
+  <div class="spec-step">2.3.6. &nbsp; O sistema confirma a operação e atualiza a interface.</div>
+</div>
+
+<!-- PAGE 5: SPECIFICATION PART 2 -->
+<div class="page">
+  <table class="header-table">
+    <tr>
+      <td class="header-left">Wise<br>especificação_Gerenciar_Clientes.doc</td>
+      <td class="header-right">Versão: 1.0<br>Data: 05/09/2026</td>
+    </tr>
+  </table>
+
+  <div class="spec-h2" style="margin-left: 18px; margin-top: 0;">2.4. &nbsp; Excluir Cliente</div>
+  <div class="spec-step">2.4.1. &nbsp; O Ator seleciona a opção "Excluir" no cliente desejado.</div>
+  <div class="spec-step">2.4.2. &nbsp; O sistema exibe um modal de confirmação para evitar perdas acidentais de dados ("Tem certeza que deseja excluir este cliente?").</div>
+  <div class="spec-step">2.4.3. &nbsp; O Ator confirma a exclusão.</div>
+  <div class="spec-step">2.4.4. &nbsp; O sistema remove o registro de cliente do banco de dados.</div>
+  <div class="spec-step">2.4.5. &nbsp; O sistema remove o cliente da interface e atualiza os contadores de métricas.</div>
+
+  <div class="spec-h1" style="margin-top: 16px;">3. &nbsp; Fluxos Alternativos</div>
+  <div class="spec-h2">3.1. &nbsp; Tentativa de cadastro de cliente fracassada (dados inválidos):</div>
+  <div class="spec-substep">3.1.1. &nbsp; No passo 2.2.4, se o campo Nome/Razão Social estiver em branco, o sistema impede o salvamento.</div>
+  <div class="spec-substep">3.1.2. &nbsp; O sistema exibe mensagem de alerta informando: "O campo Nome / Empresa é obrigatório."</div>
+
+  <div class="spec-h2">3.2. &nbsp; Tentativa de edição fracassada:</div>
+  <div class="spec-substep">3.2.1. &nbsp; No passo 2.3.4, se os dados enviados forem inválidos, o sistema cancela o salvamento e exibe mensagem de erro na interface.</div>
+
+  <div class="spec-h2">3.3. &nbsp; Filtrar ou buscar clientes:</div>
+  <div class="spec-substep">3.3.1. &nbsp; O Ator pode selecionar o filtro de tipo ("Pessoa Física" ou "Pessoa Jurídica") ou digitar termos no campo de busca para filtrar por nome, e-mail, telefone ou documento em tempo real.</div>
+
+  <div class="spec-h1" style="margin-top: 16px;">4. &nbsp; Subfluxos</div>
+  <div class="spec-p">Não possui subfluxo.</div>
+
+  <div class="spec-h1" style="margin-top: 14px;">5. &nbsp; Cenários Chave</div>
+  <div class="spec-p">Os cenários chaves deste caso de uso podem ser definidos por criar, editar, listar, filtrar e excluir clientes do sistema Wise.</div>
+
+  <div class="spec-h1" style="margin-top: 14px;">6. &nbsp; Condições Prévias</div>
+  <div class="spec-p">O Ator deve estar devidamente autenticado na plataforma Software Wise.</div>
+
+  <div class="spec-h1" style="margin-top: 14px;">7. &nbsp; Pontos de Extensão</div>
+  <div class="spec-p">Os dados são persistidos e armazenados de forma segura. Vínculos futuros com o módulo de Processos e Lançamentos Financeiros (Receitas).</div>
+
+  <div class="spec-h1" style="margin-top: 14px;">8. &nbsp; Requisitos Especiais</div>
+  <div class="spec-p">A princípio não foram identificados requisitos especiais.</div>
+</div>
+
+<!-- PAGE 6: ADDITIONAL INFO & UML -->
+<div class="page">
+  <table class="header-table">
+    <tr>
+      <td class="header-left">Wise<br>especificação_Gerenciar_Clientes.doc</td>
+      <td class="header-right">Versão: 1.0<br>Data: 05/09/2026</td>
+    </tr>
+  </table>
+
+  <div class="spec-h1" style="margin-top: 0;">9. &nbsp; Informações Adicionais</div>
+
+  <div class="uml-container">
+    <svg width="450" height="260" viewBox="0 0 450 260" style="border: 1px solid #000; background-color: #fff;">
+      <!-- Tab tag 'uc' -->
+      <polygon points="0,0 45,0 45,20 35,25 0,25" fill="#fff" stroke="#000" stroke-width="1" />
+      <text x="10" y="16" font-family="Arial, sans-serif" font-size="11" font-weight="bold">uc</text>
+
+      <!-- Actor Stick Figure -->
+      <circle cx="95" cy="95" r="14" fill="none" stroke="#000" stroke-width="2" />
+      <line x1="95" y1="109" x2="95" y2="155" stroke="#000" stroke-width="2" />
+      <line x1="70" y1="125" x2="120" y2="125" stroke="#000" stroke-width="2" />
+      <line x1="95" y1="155" x2="75" y2="195" stroke="#000" stroke-width="2" />
+      <line x1="95" y1="155" x2="115" y2="195" stroke="#000" stroke-width="2" />
+      <text x="95" y="215" font-family="Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Actor</text>
+
+      <!-- Association Line -->
+      <line x1="125" y1="130" x2="250" y2="130" stroke="#000" stroke-width="1.5" />
+
+      <!-- Use Case Ellipse -->
+      <ellipse cx="320" cy="130" rx="65" ry="25" fill="#ffffcc" stroke="#000" stroke-width="1.5" />
+      <text x="320" y="126" font-family="Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Gerenciar_Clien</text>
+      <text x="320" y="139" font-family="Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">tes</text>
+    </svg>
+  </div>
+</div>
+
+</body>
+</html>

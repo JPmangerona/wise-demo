@@ -24,21 +24,13 @@ export function Header() {
           actionText: 'Novo Cliente',
           actionStyle: 'bg-blue-600 hover:bg-blue-500 text-white'
         };
-      case '/receita':
+      case '/financeiro':
         return {
-          title: 'Receitas',
+          title: 'Financeiro',
           cat: 'Financeiro',
-          sub: 'Entradas',
-          actionText: 'Lançar Receita',
+          sub: 'Gestão Unificada',
+          actionText: 'Novo Lançamento',
           actionStyle: 'bg-emerald-600 hover:bg-emerald-500 text-white'
-        };
-      case '/despesa':
-        return {
-          title: 'Despesas',
-          cat: 'Financeiro',
-          sub: 'Saídas',
-          actionText: 'Lançar Despesa',
-          actionStyle: 'bg-red-600 hover:bg-red-500 text-white'
         };
       case '/relatorios':
         return {

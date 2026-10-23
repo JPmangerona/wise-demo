@@ -20,12 +20,10 @@ export default function RelatoriosPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [revRes, expRes] = await Promise.all([
-          api.get('/revenues'),
-          api.get('/expenses'),
-        ]);
-        setRevenues(revRes.data || []);
-        setExpenses(expRes.data || []);
+        const { data } = await api.get('/financial');
+        const records = data || [];
+        setRevenues(records.filter((r: any) => r.type === 'REVENUE'));
+        setExpenses(records.filter((r: any) => r.type === 'EXPENSE'));
       } catch (err) {
         console.error('Erro ao carregar dados de relatórios:', err);
       } finally {
