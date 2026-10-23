@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Clock, MapPin, ChevronLeft, ChevronRight, ChevronDown, Video, Edit2, Trash2 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { RequiredMark } from '@/components/ui/RequiredMark';
 import api from '@/services/api';
 import { AgendaCategory, AgendaEvent } from '@/types';
 
@@ -429,14 +430,14 @@ export default function Agenda() {
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Título</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Título <RequiredMark /></label>
             <input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full px-4 py-2 border rounded-lg outline-none" />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             {/* Left: Open Calendar */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Data</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Data <RequiredMark /></label>
               <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
                 <div className="flex justify-between items-center mb-3">
                   <button type="button" onClick={prevModalMonth} className="p-1 hover:bg-slate-200 rounded text-slate-600"><ChevronLeft className="w-4 h-4" /></button>
@@ -466,7 +467,7 @@ export default function Agenda() {
             {/* Right: Time, Location, Category */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Horário (Início - Fim)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Horário (Início - Fim) <RequiredMark /></label>
                 <div className="flex items-center gap-2">
                   <select 
                     value={formData.time?.split(' - ')[0] || '10:00'} 

@@ -17,6 +17,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { RequiredMark } from '@/components/ui/RequiredMark';
 import api from '@/services/api';
 import { User, Client, Process, ProcessStatus, PROCESS_STATUS_LABELS } from '@/types';
 import {
@@ -636,7 +637,7 @@ export default function ProcessosPage() {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
-                      DATA / HORA
+                      DATA / HORA <RequiredMark />
                     </label>
                     <div className="relative">
                       <input
@@ -663,7 +664,7 @@ export default function ProcessosPage() {
 
                   <div>
                     <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
-                      DESCRIÇÃO
+                      DESCRIÇÃO <RequiredMark />
                     </label>
                     <textarea
                       rows={4}
@@ -751,12 +752,12 @@ export default function ProcessosPage() {
           {/* CNJ + Título */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Número Processo (CNJ)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Número Processo (CNJ) <RequiredMark /></label>
               <input type="text" maxLength={100} value={formData.cnj} onChange={(e) => setFormData({ ...formData, cnj: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
               {fieldErrors.cnj && <p className="text-xs text-red-600 font-medium mt-1">{fieldErrors.cnj}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Título / Causa</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Título / Causa <RequiredMark /></label>
               <input type="text" maxLength={100} value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
               {fieldErrors.title && <p className="text-xs text-red-600 font-medium mt-1">{fieldErrors.title}</p>}
             </div>

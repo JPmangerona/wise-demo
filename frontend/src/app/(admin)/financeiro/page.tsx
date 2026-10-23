@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Search, Edit2, Trash2, ArrowUpRight, ArrowDownRight, Wallet, Plus, Filter } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { RequiredMark } from '@/components/ui/RequiredMark';
 import api from '@/services/api';
 import {
   FinancialRecord,
@@ -481,7 +482,7 @@ export default function FinanceiroPage() {
 
           {/* Seleção do Tipo */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Tipo de Lançamento</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Tipo de Lançamento <RequiredMark /></label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -510,7 +511,7 @@ export default function FinanceiroPage() {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              {formData.type === 'REVENUE' ? 'Cliente' : 'Fornecedor'}
+              {formData.type === 'REVENUE' ? 'Cliente' : 'Fornecedor'} <RequiredMark />
             </label>
             <input
               type="text"
@@ -523,7 +524,7 @@ export default function FinanceiroPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Descrição <RequiredMark /></label>
             <input
               type="text"
               value={formData.description}
@@ -535,7 +536,7 @@ export default function FinanceiroPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Valor (R$)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Valor (R$) <RequiredMark /></label>
               <input
                 type="text"
                 value={formData.amount}
@@ -547,7 +548,7 @@ export default function FinanceiroPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Data</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Data <RequiredMark /></label>
               <input
                 type="text"
                 value={formData.date}

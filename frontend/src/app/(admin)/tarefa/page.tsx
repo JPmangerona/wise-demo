@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { CheckCircle, CheckSquare, Clock, Edit2, Search, Trash2 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { RequiredMark } from '@/components/ui/RequiredMark';
 import api from '@/services/api';
 import { Task, TaskPriority, TaskStatus, TASK_PRIORITY_LABELS, TASK_STATUS_LABELS, User } from '@/types';
 
@@ -234,7 +235,7 @@ export default function Tarefas() {
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Título da Tarefa</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Título da Tarefa <RequiredMark /></label>
             <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
           </div>
           <div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Edit2, Search, Shield, Trash2, UserCheck, Users } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { RequiredMark } from '@/components/ui/RequiredMark';
 import api from '@/services/api';
 import { User } from '@/types';
 
@@ -227,10 +228,10 @@ export default function Usuarios() {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingUser ? 'Editar Usuário' : 'Novo Usuário'}>
         <div className="space-y-4">
-          <Input label="Nome" value={formData.name} onChange={(value) => setFormData({ ...formData, name: value })} />
-          <Input label="Email" value={formData.email} onChange={(value) => setFormData({ ...formData, email: value })} type="email" />
+          <Input label="Nome" required value={formData.name} onChange={(value) => setFormData({ ...formData, name: value })} />
+          <Input label="Email" required value={formData.email} onChange={(value) => setFormData({ ...formData, email: value })} type="email" />
           <div className="grid grid-cols-2 gap-4">
-            <Input label={editingUser ? 'Nova senha (opcional)' : 'Senha'} value={formData.password} onChange={(value) => setFormData({ ...formData, password: value })} type="password" />
+            <Input label={editingUser ? 'Nova senha (opcional)' : 'Senha'} required={!editingUser} value={formData.password} onChange={(value) => setFormData({ ...formData, password: value })} type="password" />
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
               <select value={formData.isActive ? 'Ativo' : 'Inativo'} onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'Ativo' })} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
@@ -286,10 +287,10 @@ function Metric({ label, value, icon, color }: { label: string; value: number; i
   );
 }
 
-function Input({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
+function Input({ label, value, onChange, type = 'text', required = false }: { label: string; value: string; onChange: (value: string) => void; type?: string; required?: boolean }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-slate-700 mb-1">{label}{required && <> <RequiredMark /></>}</label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
     </div>
   );

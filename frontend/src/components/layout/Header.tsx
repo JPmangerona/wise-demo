@@ -16,19 +16,19 @@ export function Header() {
           actionText: 'Novo Usuário',
           actionStyle: 'bg-gradient-to-r from-primary to-primary-dim text-white'
         };
-      case '/clientes':
+      case '/contatos':
         return {
-          title: 'Clientes',
+          title: 'Contatos',
           cat: 'Clientes',
-          sub: 'Gestão',
-          actionText: 'Novo Cliente',
+          sub: 'Fornecedores',
+          actionText: 'Novo Contato',
           actionStyle: 'bg-blue-600 hover:bg-blue-500 text-white'
         };
       case '/financeiro':
         return {
           title: 'Financeiro',
-          cat: 'Financeiro',
-          sub: 'Gestão Unificada',
+          cat: 'Receitas',
+          sub: 'Despesas',
           actionText: 'Novo Lançamento',
           actionStyle: 'bg-emerald-600 hover:bg-emerald-500 text-white'
         };

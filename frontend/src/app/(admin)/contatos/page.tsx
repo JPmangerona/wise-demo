@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Building2, Edit2, Mail, Phone, Search, Trash2, User, Users } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { RequiredMark } from '@/components/ui/RequiredMark';
 import api from '@/services/api';
 import { Client } from '@/types';
 
@@ -257,7 +258,7 @@ export default function ClientesPage() {
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nome / Empresa</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Nome / Empresa <RequiredMark /></label>
             <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded-lg outline-none" />
           </div>
           <div className="grid grid-cols-2 gap-4">
