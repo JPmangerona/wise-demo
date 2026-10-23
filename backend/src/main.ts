@@ -34,7 +34,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 3002;
+  // No Railway o target port configurado é 5000; localmente usa PORT ou 3002
+  const port = process.env.RAILWAY_ENVIRONMENT ? 5000 : (process.env.PORT || 3002);
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 Backend rodando na porta ${port} no host 0.0.0.0`);
 }
